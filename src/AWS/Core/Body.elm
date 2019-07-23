@@ -1,13 +1,12 @@
-module AWS.Core.Body
-    exposing
-        ( Body
-        , empty
-        , explicitMimetype
-        , json
-        , string
-        , toHttp
-        , toString
-        )
+module AWS.Core.Body exposing
+    ( Body
+    , empty
+    , explicitMimetype
+    , json
+    , string
+    , toHttp
+    , toString
+    )
 
 import Http
 import Json.Encode

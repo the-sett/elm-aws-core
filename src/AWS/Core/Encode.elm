@@ -1,17 +1,16 @@
-module AWS.Core.Encode
-    exposing
-        ( addListToQueryArgs
-        , addOneToQueryArgs
-        , addRecordToQueryArgs
-        , bool
-        , optionalMember
-        , unchangedQueryArgs
-        , uri
-        )
+module AWS.Core.Encode exposing
+    ( addListToQueryArgs
+    , addOneToQueryArgs
+    , addRecordToQueryArgs
+    , bool
+    , optionalMember
+    , unchangedQueryArgs
+    , uri
+    )
 
 import Char
 import Http
-import Regex exposing (HowMany(All), regex)
+import Regex exposing (HowMany(..), regex)
 import Word.Hex as Hex
 
 
@@ -27,7 +26,7 @@ For AWS only "Unreserved Characters" are allowed.
 See <http://tools.ietf.org/html/rfc3986>
 Section 2.3
 
-So basically we need to also cover: ! * ' ( )
+So basically we need to also cover: ! \* ' ( )
 
 -}
 uri : String -> String
@@ -60,6 +59,7 @@ bool : Bool -> String
 bool val =
     if val then
         "true"
+
     else
         "false"
 
@@ -106,12 +106,14 @@ listItemKey flattened index base key =
     base
         ++ (if flattened then
                 "."
+
             else
                 ".member."
            )
         ++ toString (index + 1)
         ++ (if String.isEmpty key then
                 ""
+
             else
                 "." ++ key
            )
@@ -128,6 +130,7 @@ addRecordToQueryArgs transform base record =
         prefix =
             if String.isEmpty base then
                 ""
+
             else
                 base ++ "."
     in

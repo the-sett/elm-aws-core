@@ -1,10 +1,9 @@
-module AWS.Core.Request
-    exposing
-        ( Unsigned
-        , queryString
-        , unsigned
-        , url
-        )
+module AWS.Core.Request exposing
+    ( Unsigned
+    , queryString
+    , unsigned
+    , url
+    )
 
 import AWS.Core.Body as Body exposing (Body)
 import AWS.Core.Encode

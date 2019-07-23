@@ -1,4 +1,4 @@
-module AWS.Core.Signers.V4 exposing (..)
+module AWS.Core.Signers.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatDate, headers, sign, signature, stringToSign)
 
 import AWS.Core.Body exposing (Body, explicitMimetype)
 import AWS.Core.Credentials as Credentials exposing (Credentials)
@@ -9,9 +9,10 @@ import Crypto.HMAC exposing (sha256)
 import Date exposing (Date)
 import Date.Extra exposing (toUtcIsoString)
 import Http
-import Regex exposing (HowMany(All), regex)
+import Regex exposing (HowMany(..), regex)
 import Word.Bytes as Bytes
 import Word.Hex as Hex
+
 
 
 -- http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html
@@ -64,10 +65,12 @@ headers service date body extraHeaders =
           ]
         , if List.member "accept" extraNames then
             []
+
           else
             [ ( "Accept", Service.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
+
           else
             [ ( "Content-Type", Service.jsonContentType service ) ]
         ]

@@ -1,9 +1,8 @@
-module AWS.Core.InternalTypes
-    exposing
-        ( Protocol(..)
-        , Signer(..)
-        , TimestampFormat(..)
-        )
+module AWS.Core.InternalTypes exposing
+    ( Protocol(..)
+    , Signer(..)
+    , TimestampFormat(..)
+    )
 
 
 type Protocol

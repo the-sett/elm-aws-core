@@ -1,38 +1,12 @@
-module AWS.Core.Service
-    exposing
-        ( ApiVersion
-        , Endpoint(..)
-        , Protocol
-        , Region
-        , Service
-        , Signer
-        , TimestampFormat
-        , acceptType
-        , defineGlobal
-        , defineRegional
-        , ec2
-        , endpointPrefix
-        , host
-        , iso8601
-        , json
-        , jsonContentType
-        , query
-        , region
-        , restJson
-        , restXml
-        , rfc822
-        , setJsonVersion
-        , setSigningName
-        , setTargetPrefix
-        , setTimestampFormat
-        , setXmlNamespace
-        , signS3
-        , signV4
-        , signer
-        , targetPrefix
-        , toDigitalOceanSpaces
-        , unixTimestamp
-        )
+module AWS.Core.Service exposing
+    ( Service, ApiVersion, Region, Protocol, Signer, TimestampFormat, Endpoint(..)
+    , defineGlobal, defineRegional
+    , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
+    , ec2, json, query, restJson, restXml
+    , signV4, signS3
+    , iso8601, rfc822, unixTimestamp
+    , endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
+    )
 
 {-| AWS service configuration.
 
@@ -102,6 +76,7 @@ import AWS.Core.InternalTypes
         , Signer(..)
         , TimestampFormat(..)
         )
+
 
 
 -- SERVICES
@@ -339,6 +314,7 @@ jsonContentType : Service -> String
 jsonContentType (Service { protocol, jsonVersion }) =
     (if protocol == restXml then
         "application/xml"
+
      else
         case jsonVersion of
             Just apiVersion ->
@@ -356,6 +332,7 @@ acceptType : Service -> String
 acceptType (Service { protocol }) =
     if protocol == restXml then
         "application/xml"
+
     else
         "application/json"
 
@@ -463,14 +440,14 @@ query =
     QUERY
 
 
-{-| REST_JSON request protocol.
+{-| REST\_JSON request protocol.
 -}
 restJson : Protocol
 restJson =
     REST_JSON
 
 
-{-| REST_XML request protocol.
+{-| REST\_XML request protocol.
 -}
 restXml : Protocol
 restXml =

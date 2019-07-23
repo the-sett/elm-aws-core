@@ -1,19 +1,7 @@
-module AWS.Core.Http
-    exposing
-        ( Body
-        , Method(..)
-        , MimeType
-        , Path
-        , Request
-        , addHeaders
-        , addQuery
-        , emptyBody
-        , jsonBody
-        , request
-        , send
-        , setResponseParser
-        , stringBody
-        )
+module AWS.Core.Http exposing
+    ( Request, request, addHeaders, addQuery, setResponseParser, send, Method(..), Path
+    , Body, MimeType, emptyBody, stringBody, jsonBody
+    )
 
 {-| AWS requests and responses.
 

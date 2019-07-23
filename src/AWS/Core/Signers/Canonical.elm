@@ -1,10 +1,11 @@
-module AWS.Core.Signers.Canonical exposing (..)
+module AWS.Core.Signers.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
 import AWS.Core.Body exposing (Body)
 import AWS.Core.Encode
 import AWS.Core.InternalTypes exposing (Signer(..))
 import Crypto.Hash exposing (sha256)
-import Regex exposing (HowMany(All), regex)
+import Regex exposing (HowMany(..), regex)
+
 
 
 -- http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
@@ -50,6 +51,7 @@ canonicalUri signer path =
         SignV4 ->
             if String.isEmpty path then
                 "/"
+
             else
                 path
                     |> Regex.replace All (regex "/{2,}") (\_ -> "/")
@@ -108,10 +110,12 @@ resolveRelativePath path =
                 (\{ match } ->
                     if match == "/./" || match == "/." then
                         "/"
+
                     else
                         ""
                 )
             |> resolveRelativePath
+
     else
         path
 
@@ -132,6 +136,7 @@ mergeSameHeaders ( key1, val1 ) acc =
         ( key0, val0 ) :: rest ->
             if key0 == key1 then
                 ( key0, val0 ++ "," ++ val1 ) :: rest
+
             else
                 ( key1, val1 ) :: ( key0, val0 ) :: rest
 
