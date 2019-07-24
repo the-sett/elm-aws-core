@@ -6,7 +6,7 @@ module AWS.Core.Enum exposing (toString, toFloat)
 
 -}
 
-import Regex exposing (contains, regex)
+import Regex exposing (contains)
 
 
 crop : a -> Maybe (List String)
