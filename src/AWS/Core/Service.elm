@@ -120,15 +120,15 @@ define :
     -> Signer
     -> (Service -> Service)
     -> Service
-define endpointPrefix apiVersion protocol signer extra =
+define prefix apiVersion protocol signerType extra =
     Service
-        { endpointPrefix = endpointPrefix
+        { endpointPrefix = prefix
         , protocol = protocol
-        , signer = signer
+        , signer = signerType
         , apiVersion = apiVersion
         , jsonVersion = Nothing
         , signingName = Nothing
-        , targetPrefix = defaultTargetPrefix endpointPrefix apiVersion
+        , targetPrefix = defaultTargetPrefix prefix apiVersion
         , timestampFormat = defaultTimestampFormat protocol
         , xmlNamespace = Nothing
         , endpoint = GlobalEndpoint
@@ -193,12 +193,12 @@ defineRegional :
     -> (Service -> Service)
     -> Region
     -> Service
-defineRegional endpointPrefix apiVersion protocol signer extra region =
+defineRegional prefix apiVersion protocol signerType extra rgn =
     case
-        define endpointPrefix apiVersion protocol signer extra
+        define prefix apiVersion protocol signerType extra
     of
         Service s ->
-            Service { s | endpoint = RegionalEndpoint region }
+            Service { s | endpoint = RegionalEndpoint rgn }
 
 
 
@@ -225,21 +225,21 @@ toDigitalOceanSpaces (Service service) =
     Service
         { service
             | hostResolver =
-                \endpoint endpointPrefix ->
+                \endpoint _ ->
                     case endpoint of
                         GlobalEndpoint ->
                             "nyc3.digitaloceanspaces.com"
 
-                        RegionalEndpoint region ->
-                            region ++ ".digitaloceanspaces.com"
+                        RegionalEndpoint rgn ->
+                            rgn ++ ".digitaloceanspaces.com"
             , regionResolver =
                 \endpoint ->
                     case endpoint of
                         GlobalEndpoint ->
                             "nyc3"
 
-                        RegionalEndpoint region ->
-                            region
+                        RegionalEndpoint rgn ->
+                            rgn
         }
 
 
@@ -290,33 +290,33 @@ setXmlNamespace namespace (Service service) =
 {-| Set the target prefix.
 -}
 targetPrefix : Service -> String
-targetPrefix (Service { targetPrefix }) =
-    targetPrefix
+targetPrefix (Service spec) =
+    spec.targetPrefix
 
 
 {-| Name of the service.
 -}
 endpointPrefix : Service -> String
-endpointPrefix (Service { endpointPrefix }) =
-    endpointPrefix
+endpointPrefix (Service spec) =
+    spec.endpointPrefix
 
 
 {-| Service signature version.
 -}
 signer : Service -> Signer
-signer (Service { signer }) =
-    signer
+signer (Service spec) =
+    spec.signer
 
 
 {-| Gets the service JSON content type header value.
 -}
 jsonContentType : Service -> String
-jsonContentType (Service { protocol, jsonVersion }) =
-    (if protocol == restXml then
+jsonContentType (Service spec) =
+    (if spec.protocol == restXml then
         "application/xml"
 
      else
-        case jsonVersion of
+        case spec.jsonVersion of
             Just apiVersion ->
                 "application/x-amz-json-" ++ apiVersion
 
@@ -329,8 +329,8 @@ jsonContentType (Service { protocol, jsonVersion }) =
 {-| Gets the service Accept header value.
 -}
 acceptType : Service -> String
-acceptType (Service { protocol }) =
-    if protocol == restXml then
+acceptType (Service spec) =
+    if spec.protocol == restXml then
         "application/xml"
 
     else
@@ -374,18 +374,18 @@ globalEndpoint =
 {-| Service endpoint as a hostname.
 -}
 host : Service -> String
-host (Service { hostResolver, endpoint, endpointPrefix }) =
-    hostResolver endpoint endpointPrefix
+host (Service spec) =
+    spec.hostResolver spec.endpoint spec.endpointPrefix
 
 
 defaultHostResolver : Endpoint -> String -> String
-defaultHostResolver endpoint endpointPrefix =
+defaultHostResolver endpoint prefix =
     case endpoint of
         GlobalEndpoint ->
-            endpointPrefix ++ ".amazonaws.com"
+            prefix ++ ".amazonaws.com"
 
-        RegionalEndpoint region ->
-            endpointPrefix ++ "." ++ region ++ ".amazonaws.com"
+        RegionalEndpoint rgn ->
+            prefix ++ "." ++ rgn ++ ".amazonaws.com"
 
 
 {-| Service region.
@@ -398,8 +398,8 @@ region (Service { endpoint, regionResolver }) =
 defaultRegionResolver : Endpoint -> String
 defaultRegionResolver endpoint =
     case endpoint of
-        RegionalEndpoint region ->
-            region
+        RegionalEndpoint rgn ->
+            rgn
 
         GlobalEndpoint ->
             -- See http://docs.aws.amazon.com/general/latest/gr/sigv4_changes.html
@@ -523,9 +523,9 @@ unixTimestamp =
 
 
 defaultTargetPrefix : String -> ApiVersion -> String
-defaultTargetPrefix endpointPrefix apiVersion =
+defaultTargetPrefix prefix apiVersion =
     "AWS"
-        ++ String.toUpper endpointPrefix
+        ++ String.toUpper prefix
         ++ "_"
         ++ (apiVersion |> String.split "-" |> String.join "")
 
