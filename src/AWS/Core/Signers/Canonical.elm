@@ -4,7 +4,7 @@ import AWS.Core.Body exposing (Body)
 import AWS.Core.Encode
 import AWS.Core.InternalTypes exposing (Signer(..))
 import Crypto.Hash exposing (sha256)
-import Regex exposing (HowMany(..), regex)
+import Regex
 
 
 
@@ -54,7 +54,7 @@ canonicalUri signer path =
 
             else
                 path
-                    |> Regex.replace All (regex "/{2,}") (\_ -> "/")
+                    |> Regex.replace (Regex.fromString "/{2,}" |> Maybe.withDefault Regex.never) (\_ -> "/")
                     |> resolveRelativePath
                     |> String.split "/"
                     |> List.map AWS.Core.Encode.uri
@@ -101,11 +101,12 @@ resolveRelativePath : String -> String
 resolveRelativePath path =
     let
         rel =
-            regex "(([^/]+)/[.]{2}|/[.])/?"
+            Regex.fromString "(([^/]+)/[.]{2}|/[.])/?"
+                |> Maybe.withDefault Regex.never
     in
     if Regex.contains rel path then
         path
-            |> Regex.replace All
+            |> Regex.replace
                 rel
                 (\{ match } ->
                     if match == "/./" || match == "/." then
@@ -124,9 +125,9 @@ normalizeHeader : ( String, String ) -> ( String, String )
 normalizeHeader ( key, val ) =
     ( String.toLower key
     , val
-        |> Regex.replace All (regex "\\s*?\n\\s*") (\_ -> ",")
-        |> Regex.replace All (regex "(^\\s*|\\s*$)") (\_ -> "")
-        |> Regex.replace All (regex "\\s{2,}") (\_ -> " ")
+        |> Regex.replace (Regex.fromString "\\s*?\n\\s*" |> Maybe.withDefault Regex.never) (\_ -> ",")
+        |> Regex.replace (Regex.fromString "(^\\s*|\\s*$)" |> Maybe.withDefault Regex.never) (\_ -> "")
+        |> Regex.replace (Regex.fromString "\\s{2,}" |> Maybe.withDefault Regex.never) (\_ -> " ")
     )
 
 
