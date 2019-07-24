@@ -10,7 +10,7 @@ module AWS.Core.Encode exposing
 
 import Char
 import Http
-import Regex exposing (HowMany(..), regex)
+import Regex
 import Word.Hex as Hex
 
 
