@@ -7,7 +7,7 @@ import AWS.Core.Service as Service exposing (Service)
 import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
 import Http
-import Regex exposing (HowMany(..), regex)
+import Regex
 import Word.Bytes as Bytes
 import Word.Hex as Hex
 
