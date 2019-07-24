@@ -23,7 +23,7 @@ sign :
     -> Credentials
     -> Posix
     -> Unsigned a
-    -> Http.Request a
+    -> Cmd a
 sign service creds date req =
     Http.request
         { method = req.method
@@ -42,7 +42,7 @@ sign service creds date req =
                 Nothing ->
                     Http.expectJson req.decoder
         , timeout = Nothing
-        , withCredentials = False
+        , tracker = Nothing
         }
 
 
@@ -94,7 +94,7 @@ addSessionToken creds headersList =
         |> Credentials.sessionToken
         |> Maybe.map
             (\token ->
-                ( "x-amz-security-token", token ) :: headers
+                ( "x-amz-security-token", token ) :: headersList
             )
         |> Maybe.withDefault headersList
 
@@ -112,7 +112,7 @@ addAuthorization service creds date req headersList =
             date
             service
             req
-            (headers |> (::) ( "Host", Service.host service ))
+            (headersList |> (::) ( "Host", Service.host service ))
       )
     ]
         |> List.append headersList
