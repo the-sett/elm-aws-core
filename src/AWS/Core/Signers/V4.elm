@@ -87,14 +87,14 @@ addSessionToken :
     Credentials
     -> List ( String, String )
     -> List ( String, String )
-addSessionToken creds headers =
+addSessionToken creds headersList =
     creds
         |> Credentials.sessionToken
         |> Maybe.map
             (\token ->
                 ( "x-amz-security-token", token ) :: headers
             )
-        |> Maybe.withDefault headers
+        |> Maybe.withDefault headersList
 
 
 addAuthorization :
@@ -121,13 +121,13 @@ addAuthorization service creds date req headers =
 
 
 filterHeaders : List String -> List ( String, String ) -> List ( String, String )
-filterHeaders headersToRemove headers =
+filterHeaders headersToRemove headersList =
     let
         matches =
             \( head, _ ) ->
                 not <| List.member (String.toLower head) headersToRemove
     in
-    List.filter matches headers
+    List.filter matches headersList
 
 
 authorization :
