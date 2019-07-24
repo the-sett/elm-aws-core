@@ -110,7 +110,7 @@ listItemKey flattened index base key =
             else
                 ".member."
            )
-        ++ toString (index + 1)
+        ++ String.fromInt (index + 1)
         ++ (if String.isEmpty key then
                 ""
 
