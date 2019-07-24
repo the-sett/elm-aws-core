@@ -33,8 +33,8 @@ uri : String -> String
 uri x =
     x
         |> Http.encodeUri
-        |> Regex.replace All
-            (regex "[!*'()]")
+        |> Regex.replace
+            (Regex.fromString "[!*'()]")
             (\match ->
                 match.match
                     |> String.toList
