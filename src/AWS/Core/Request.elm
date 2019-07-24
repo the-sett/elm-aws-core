@@ -7,6 +7,7 @@ module AWS.Core.Request exposing
 
 import AWS.Core.Body as Body exposing (Body)
 import AWS.Core.Encode
+import AWS.Core.QueryString as QueryString
 import AWS.Core.Service as Service exposing (Service)
 import Http
 import Json.Decode exposing (Decoder)
