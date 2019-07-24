@@ -32,7 +32,6 @@ import AWS.Core.Credentials exposing (Credentials)
 import AWS.Core.Request
 import AWS.Core.Service as Service exposing (Service)
 import AWS.Core.Signers.V4 as V4
-import Date exposing (Date)
 import Http
 import Json.Decode
 import Json.Encode

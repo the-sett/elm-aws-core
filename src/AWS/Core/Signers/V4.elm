@@ -6,8 +6,6 @@ import AWS.Core.Request exposing (Unsigned)
 import AWS.Core.Service as Service exposing (Service)
 import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
-import Date exposing (Date)
-import Date.Extra exposing (toUtcIsoString)
 import Http
 import Regex exposing (HowMany(..), regex)
 import Word.Bytes as Bytes

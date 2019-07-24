@@ -10,7 +10,6 @@ import AWS.Core.Encode
 import AWS.Core.Service as Service exposing (Service)
 import Http
 import Json.Decode exposing (Decoder)
-import QueryString
 
 
 type alias Unsigned a =
