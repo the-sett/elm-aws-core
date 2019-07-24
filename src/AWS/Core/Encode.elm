@@ -9,8 +9,8 @@ module AWS.Core.Encode exposing
     )
 
 import Char
-import Http
 import Regex
+import Url
 import Word.Hex as Hex
 
 
@@ -32,9 +32,9 @@ So basically we need to also cover: ! \* ' ( )
 uri : String -> String
 uri x =
     x
-        |> Http.encodeUri
+        |> Url.percentEncode
         |> Regex.replace
-            (Regex.fromString "[!*'()]")
+            (Regex.fromString "[!*'()]" |> Maybe.withDefault Regex.never)
             (\match ->
                 match.match
                     |> String.toList
