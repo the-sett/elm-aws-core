@@ -36,6 +36,7 @@ import Http
 import Json.Decode
 import Json.Encode
 import Task
+import Time
 
 
 {-| Holds an unsigned AWS HTTP request.
@@ -173,9 +174,9 @@ send :
     -> Request a
     -> Task.Task Http.Error a
 send serviceConfig credentials req =
-    Date.now
+    Time.now
         |> Task.andThen
-            (\date ->
-                V4.sign serviceConfig credentials date req
+            (\posix ->
+                V4.sign serviceConfig credentials posix req
                     |> Http.toTask
             )
