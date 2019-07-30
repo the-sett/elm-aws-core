@@ -8,7 +8,9 @@ import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedH
 import Crypto.HMAC exposing (sha256)
 import Http
 import Iso8601
+import Json.Decode as Decode
 import Regex
+import Task exposing (Task)
 import Time exposing (Posix)
 import Word.Bytes as Bytes
 import Word.Hex as Hex
@@ -23,10 +25,36 @@ sign :
     -> Credentials
     -> Posix
     -> Unsigned a
-    -> (Result Http.Error a -> msg)
-    -> Cmd msg
-sign service creds date req tagger =
-    Http.request
+    -> Task Http.Error a
+sign service creds date req =
+    let
+        responseDecoder response =
+            case response of
+                Http.BadUrl_ url ->
+                    Http.BadUrl url |> Err
+
+                Http.Timeout_ ->
+                    Http.Timeout |> Err
+
+                Http.NetworkError_ ->
+                    Http.NetworkError |> Err
+
+                Http.BadStatus_ metadata _ ->
+                    Http.BadStatus metadata.statusCode |> Err
+
+                Http.GoodStatus_ metadata body ->
+                    Decode.decodeString req.decoder body
+                        |> Result.mapError (\decodeError -> Decode.errorToString decodeError |> Http.BadBody)
+
+        resolver =
+            case req.responseParser of
+                Just parser ->
+                    Http.stringResolver parser
+
+                Nothing ->
+                    Http.stringResolver responseDecoder
+    in
+    Http.task
         { method = req.method
         , headers =
             headers service date req.body req.headers
@@ -35,15 +63,8 @@ sign service creds date req tagger =
                 |> List.map (\( key, val ) -> Http.header key val)
         , url = AWS.Core.Request.url service req
         , body = AWS.Core.Body.toHttp req.body
-        , expect =
-            case req.responseParser of
-                Just parser ->
-                    Http.expectStringResponse tagger parser
-
-                Nothing ->
-                    Http.expectJson tagger req.decoder
+        , resolver = resolver
         , timeout = Nothing
-        , tracker = Nothing
         }
 
 

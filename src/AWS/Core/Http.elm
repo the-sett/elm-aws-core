@@ -183,7 +183,7 @@ addQuery query req =
 
 {-| Set a parser for the entire Http.Response. Overrides the request decoder.
 -}
-setResponseParser : (Http.Response String -> Result String a) -> Request a -> Request a
+setResponseParser : (Http.Response String -> Result Http.Error a) -> Request a -> Request a
 setResponseParser parser req =
     { req | responseParser = Just parser }
 
@@ -200,5 +200,4 @@ send serviceConfig credentials req =
         |> Task.andThen
             (\posix ->
                 V4.sign serviceConfig credentials posix req
-                    |> Http.toTask
             )
