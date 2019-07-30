@@ -20,7 +20,7 @@ type alias Unsigned a =
     , decoder : Decoder a
     , headers : List ( String, String )
     , query : List ( String, String )
-    , responseParser : Maybe (Http.Response String -> Result String a)
+    , responseParser : Maybe (Http.Response String -> Result Http.Error a)
     }
 
 

@@ -23,8 +23,9 @@ sign :
     -> Credentials
     -> Posix
     -> Unsigned a
-    -> Cmd a
-sign service creds date req =
+    -> (Result Http.Error a -> msg)
+    -> Cmd msg
+sign service creds date req tagger =
     Http.request
         { method = req.method
         , headers =
@@ -37,10 +38,10 @@ sign service creds date req =
         , expect =
             case req.responseParser of
                 Just parser ->
-                    Http.expectStringResponse parser
+                    Http.expectStringResponse tagger parser
 
                 Nothing ->
-                    Http.expectJson req.decoder
+                    Http.expectJson tagger req.decoder
         , timeout = Nothing
         , tracker = Nothing
         }
