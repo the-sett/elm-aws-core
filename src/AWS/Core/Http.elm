@@ -56,6 +56,28 @@ type Method
     | PUT
 
 
+methodToString : Method -> String
+methodToString meth =
+    case meth of
+        DELETE ->
+            "DELETE"
+
+        GET ->
+            "GET"
+
+        HEAD ->
+            "HEAD"
+
+        OPTIONS ->
+            "OPTIONS"
+
+        POST ->
+            "POST"
+
+        PUT ->
+            "PUT"
+
+
 {-| Request path.
 -}
 type alias Path =
@@ -118,7 +140,7 @@ request :
     -> Json.Decode.Decoder a
     -> Request a
 request method =
-    AWS.Core.Request.unsigned (toString method)
+    AWS.Core.Request.unsigned (methodToString method)
 
 
 {-| Appends headers to an AWS HTTP unsigned request.
