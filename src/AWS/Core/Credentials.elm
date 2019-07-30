@@ -1,15 +1,8 @@
-module AWS.Core.Credentials
-    exposing
-        ( AccessKeyId
-        , Credentials
-        , SecretAccessKey
-        , SessionToken
-        , accessKeyId
-        , fromAccessKeys
-        , secretAccessKey
-        , sessionToken
-        , setSessionToken
-        )
+module AWS.Core.Credentials exposing
+    ( Credentials, AccessKeyId, SecretAccessKey, SessionToken
+    , fromAccessKeys, setSessionToken
+    , accessKeyId, secretAccessKey, sessionToken
+    )
 
 {-| AWS credentials.
 
@@ -64,10 +57,10 @@ type alias SessionToken =
 {-| Create AWS credentials given an access key and secret key.
 -}
 fromAccessKeys : AccessKeyId -> SecretAccessKey -> Credentials
-fromAccessKeys accessKeyId secretAccessKey =
+fromAccessKeys keyId secretKey =
     Credentials
-        { accessKeyId = accessKeyId
-        , secretAccessKey = secretAccessKey
+        { accessKeyId = keyId
+        , secretAccessKey = secretKey
         , sessionToken = Nothing
         }
 
@@ -82,19 +75,19 @@ setSessionToken token (Credentials creds) =
 {-| Gets the access key.
 -}
 accessKeyId : Credentials -> AccessKeyId
-accessKeyId (Credentials { accessKeyId }) =
-    accessKeyId
+accessKeyId (Credentials creds) =
+    creds.accessKeyId
 
 
 {-| Gets the secret.
 -}
 secretAccessKey : Credentials -> SecretAccessKey
-secretAccessKey (Credentials { secretAccessKey }) =
-    secretAccessKey
+secretAccessKey (Credentials creds) =
+    creds.secretAccessKey
 
 
 {-| Gets the session token.
 -}
 sessionToken : Credentials -> Maybe SessionToken
-sessionToken (Credentials { sessionToken }) =
-    sessionToken
+sessionToken (Credentials creds) =
+    creds.sessionToken

@@ -1,14 +1,13 @@
-module AWS.Core.Decode
-    exposing
-        ( Metadata
-        , Response
-        , ResponseWrapper
-        , ResultDecoder(..)
-        , dict
-        , optional
-        , required
-        , responseWrapperDecoder
-        )
+module AWS.Core.Decode exposing
+    ( Metadata
+    , Response
+    , ResponseWrapper
+    , ResultDecoder(..)
+    , dict
+    , optional
+    , required
+    , responseWrapperDecoder
+    )
 
 import Dict exposing (Dict)
 import Json.Decode as JD

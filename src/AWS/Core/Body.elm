@@ -1,13 +1,12 @@
-module AWS.Core.Body
-    exposing
-        ( Body
-        , empty
-        , explicitMimetype
-        , json
-        , string
-        , toHttp
-        , toString
-        )
+module AWS.Core.Body exposing
+    ( Body
+    , empty
+    , explicitMimetype
+    , json
+    , string
+    , toHttp
+    , toString
+    )
 
 import Http
 import Json.Encode
@@ -28,8 +27,8 @@ toHttp body =
         Json value ->
             Http.jsonBody value
 
-        String mimetype string ->
-            Http.stringBody mimetype string
+        String mimetype val ->
+            Http.stringBody mimetype val
 
 
 explicitMimetype : Body -> Maybe String
@@ -51,8 +50,8 @@ toString body =
         Empty ->
             ""
 
-        String _ string ->
-            string
+        String _ val ->
+            val
 
 
 empty : Body

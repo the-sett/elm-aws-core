@@ -1,4 +1,4 @@
-module AWS.Core.Enum exposing (toFloat, toString)
+module AWS.Core.Enum exposing (toString, toFloat)
 
 {-| Convert AWS enums values to basic values
 
@@ -6,7 +6,7 @@ module AWS.Core.Enum exposing (toFloat, toString)
 
 -}
 
-import Regex exposing (contains, regex)
+import Regex exposing (contains)
 
 
 crop : a -> Maybe (List String)
@@ -34,6 +34,7 @@ toString value =
                     in
                     if contains (regex "[^_A-Za-z0-9]") w then
                         "Not an enum value, contains invalid characters: " ++ Basics.toString value |> Err
+
                     else
                         Ok w
 

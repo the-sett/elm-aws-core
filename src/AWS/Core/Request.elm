@@ -1,17 +1,16 @@
-module AWS.Core.Request
-    exposing
-        ( Unsigned
-        , queryString
-        , unsigned
-        , url
-        )
+module AWS.Core.Request exposing
+    ( Unsigned
+    , queryString
+    , unsigned
+    , url
+    )
 
 import AWS.Core.Body as Body exposing (Body)
 import AWS.Core.Encode
+import AWS.Core.QueryString as QueryString
 import AWS.Core.Service as Service exposing (Service)
 import Http
 import Json.Decode exposing (Decoder)
-import QueryString
 
 
 type alias Unsigned a =
@@ -21,7 +20,7 @@ type alias Unsigned a =
     , decoder : Decoder a
     , headers : List ( String, String )
     , query : List ( String, String )
-    , responseParser : Maybe (Http.Response String -> Result String a)
+    , responseParser : Maybe (Http.Response String -> Result Http.Error a)
     }
 
 

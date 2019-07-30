@@ -1,19 +1,7 @@
-module AWS.Core.Http
-    exposing
-        ( Body
-        , Method(..)
-        , MimeType
-        , Path
-        , Request
-        , addHeaders
-        , addQuery
-        , emptyBody
-        , jsonBody
-        , request
-        , send
-        , setResponseParser
-        , stringBody
-        )
+module AWS.Core.Http exposing
+    ( Request, request, addHeaders, addQuery, setResponseParser, send, Method(..), Path
+    , Body, MimeType, emptyBody, stringBody, jsonBody
+    )
 
 {-| AWS requests and responses.
 
@@ -44,11 +32,11 @@ import AWS.Core.Credentials exposing (Credentials)
 import AWS.Core.Request
 import AWS.Core.Service as Service exposing (Service)
 import AWS.Core.Signers.V4 as V4
-import Date exposing (Date)
 import Http
 import Json.Decode
 import Json.Encode
 import Task
+import Time
 
 
 {-| Holds an unsigned AWS HTTP request.
@@ -66,6 +54,28 @@ type Method
     | OPTIONS
     | POST
     | PUT
+
+
+methodToString : Method -> String
+methodToString meth =
+    case meth of
+        DELETE ->
+            "DELETE"
+
+        GET ->
+            "GET"
+
+        HEAD ->
+            "HEAD"
+
+        OPTIONS ->
+            "OPTIONS"
+
+        POST ->
+            "POST"
+
+        PUT ->
+            "PUT"
 
 
 {-| Request path.
@@ -130,7 +140,7 @@ request :
     -> Json.Decode.Decoder a
     -> Request a
 request method =
-    AWS.Core.Request.unsigned (toString method)
+    AWS.Core.Request.unsigned (methodToString method)
 
 
 {-| Appends headers to an AWS HTTP unsigned request.
@@ -173,7 +183,7 @@ addQuery query req =
 
 {-| Set a parser for the entire Http.Response. Overrides the request decoder.
 -}
-setResponseParser : (Http.Response String -> Result String a) -> Request a -> Request a
+setResponseParser : (Http.Response String -> Result Http.Error a) -> Request a -> Request a
 setResponseParser parser req =
     { req | responseParser = Just parser }
 
@@ -186,9 +196,8 @@ send :
     -> Request a
     -> Task.Task Http.Error a
 send serviceConfig credentials req =
-    Date.now
+    Time.now
         |> Task.andThen
-            (\date ->
-                V4.sign serviceConfig credentials date req
-                    |> Http.toTask
+            (\posix ->
+                V4.sign serviceConfig credentials posix req
             )

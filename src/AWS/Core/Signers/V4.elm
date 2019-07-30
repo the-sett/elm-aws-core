@@ -1,4 +1,4 @@
-module AWS.Core.Signers.V4 exposing (..)
+module AWS.Core.Signers.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
 
 import AWS.Core.Body exposing (Body, explicitMimetype)
 import AWS.Core.Credentials as Credentials exposing (Credentials)
@@ -6,12 +6,15 @@ import AWS.Core.Request exposing (Unsigned)
 import AWS.Core.Service as Service exposing (Service)
 import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
-import Date exposing (Date)
-import Date.Extra exposing (toUtcIsoString)
 import Http
-import Regex exposing (HowMany(All), regex)
+import Iso8601
+import Json.Decode as Decode
+import Regex
+import Task exposing (Task)
+import Time exposing (Posix)
 import Word.Bytes as Bytes
 import Word.Hex as Hex
+
 
 
 -- http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html
@@ -20,11 +23,38 @@ import Word.Hex as Hex
 sign :
     Service
     -> Credentials
-    -> Date
+    -> Posix
     -> Unsigned a
-    -> Http.Request a
+    -> Task Http.Error a
 sign service creds date req =
-    Http.request
+    let
+        responseDecoder response =
+            case response of
+                Http.BadUrl_ url ->
+                    Http.BadUrl url |> Err
+
+                Http.Timeout_ ->
+                    Http.Timeout |> Err
+
+                Http.NetworkError_ ->
+                    Http.NetworkError |> Err
+
+                Http.BadStatus_ metadata _ ->
+                    Http.BadStatus metadata.statusCode |> Err
+
+                Http.GoodStatus_ metadata body ->
+                    Decode.decodeString req.decoder body
+                        |> Result.mapError (\decodeError -> Decode.errorToString decodeError |> Http.BadBody)
+
+        resolver =
+            case req.responseParser of
+                Just parser ->
+                    Http.stringResolver parser
+
+                Nothing ->
+                    Http.stringResolver responseDecoder
+    in
+    Http.task
         { method = req.method
         , headers =
             headers service date req.body req.headers
@@ -33,15 +63,8 @@ sign service creds date req =
                 |> List.map (\( key, val ) -> Http.header key val)
         , url = AWS.Core.Request.url service req
         , body = AWS.Core.Body.toHttp req.body
-        , expect =
-            case req.responseParser of
-                Just parser ->
-                    Http.expectStringResponse parser
-
-                Nothing ->
-                    Http.expectJson req.decoder
+        , resolver = resolver
         , timeout = Nothing
-        , withCredentials = False
         }
 
 
@@ -50,7 +73,7 @@ algorithm =
     "AWS4-HMAC-SHA256"
 
 
-headers : Service -> Date -> Body -> List ( String, String ) -> List ( String, String )
+headers : Service -> Posix -> Body -> List ( String, String ) -> List ( String, String )
 headers service date body extraHeaders =
     let
         extraNames =
@@ -59,26 +82,28 @@ headers service date body extraHeaders =
     in
     List.concat
         [ extraHeaders
-        , [ ( "x-amz-date", formatDate date )
+        , [ ( "x-amz-date", formatPosix date )
           , ( "x-amz-content-sha256", canonicalPayload body )
           ]
         , if List.member "accept" extraNames then
             []
+
           else
             [ ( "Accept", Service.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
+
           else
             [ ( "Content-Type", Service.jsonContentType service ) ]
         ]
 
 
-formatDate : Date -> String
-formatDate date =
+formatPosix : Posix -> String
+formatPosix date =
     date
-        |> toUtcIsoString
-        |> Regex.replace All
-            (regex "([-:]|\\.\\d{3})")
+        |> Iso8601.fromTime
+        |> Regex.replace
+            (Regex.fromString "([-:]|\\.\\d{3})" |> Maybe.withDefault Regex.never)
             (\_ -> "")
 
 
@@ -86,33 +111,33 @@ addSessionToken :
     Credentials
     -> List ( String, String )
     -> List ( String, String )
-addSessionToken creds headers =
+addSessionToken creds headersList =
     creds
         |> Credentials.sessionToken
         |> Maybe.map
             (\token ->
-                ( "x-amz-security-token", token ) :: headers
+                ( "x-amz-security-token", token ) :: headersList
             )
-        |> Maybe.withDefault headers
+        |> Maybe.withDefault headersList
 
 
 addAuthorization :
     Service
     -> Credentials
-    -> Date
+    -> Posix
     -> Unsigned a
     -> List ( String, String )
     -> List ( String, String )
-addAuthorization service creds date req headers =
+addAuthorization service creds date req headersList =
     [ ( "Authorization"
       , authorization creds
             date
             service
             req
-            (headers |> (::) ( "Host", Service.host service ))
+            (headersList |> (::) ( "Host", Service.host service ))
       )
     ]
-        |> List.append headers
+        |> List.append headersList
 
 
 
@@ -120,18 +145,18 @@ addAuthorization service creds date req headers =
 
 
 filterHeaders : List String -> List ( String, String ) -> List ( String, String )
-filterHeaders headersToRemove headers =
+filterHeaders headersToRemove headersList =
     let
         matches =
             \( head, _ ) ->
                 not <| List.member (String.toLower head) headersToRemove
     in
-    List.filter matches headers
+    List.filter matches headersList
 
 
 authorization :
     Credentials
-    -> Date
+    -> Posix
     -> Service
     -> Unsigned a
     -> List ( String, String )
@@ -139,11 +164,11 @@ authorization :
 authorization creds date service req rawHeaders =
     let
         -- Content-Type & Accept tend to be amended by Http.request
-        headers =
+        filteredHeaders =
             filterHeaders [ "content-type", "accept" ] rawHeaders
 
         canon =
-            canonical (Service.signer service) req.method req.path headers req.query req.body
+            canonical (Service.signer service) req.method req.path filteredHeaders req.query req.body
 
         scope =
             credentialScope date creds service
@@ -153,16 +178,16 @@ authorization creds date service req rawHeaders =
         ++ "/"
         ++ scope
     , "SignedHeaders="
-        ++ signedHeaders headers
+        ++ signedHeaders filteredHeaders
     , "Signature="
         ++ signature creds service date (stringToSign algorithm date scope canon)
     ]
         |> String.join ", "
 
 
-credentialScope : Date -> Credentials -> Service -> String
+credentialScope : Posix -> Credentials -> Service -> String
 credentialScope date creds service =
-    [ date |> formatDate |> String.slice 0 8
+    [ date |> formatPosix |> String.slice 0 8
     , Service.region service
     , Service.endpointPrefix service
     , "aws4_request"
@@ -170,7 +195,7 @@ credentialScope date creds service =
         |> String.join "/"
 
 
-signature : Credentials -> Service -> Date -> String -> String
+signature : Credentials -> Service -> Posix -> String -> String
 signature creds service date toSign =
     let
         digest =
@@ -183,7 +208,7 @@ signature creds service date toSign =
         |> Credentials.secretAccessKey
         |> (++) "AWS4"
         |> Bytes.fromUTF8
-        |> digest (formatDate date |> String.slice 0 8)
+        |> digest (formatPosix date |> String.slice 0 8)
         |> digest (Service.region service)
         |> digest (Service.endpointPrefix service)
         |> digest "aws4_request"
@@ -191,10 +216,10 @@ signature creds service date toSign =
         |> Hex.fromByteList
 
 
-stringToSign : String -> Date -> String -> String -> String
-stringToSign algorithm date scope canon =
-    [ algorithm
-    , date |> formatDate
+stringToSign : String -> Posix -> String -> String -> String
+stringToSign alg date scope canon =
+    [ alg
+    , date |> formatPosix
     , scope
     , canon
     ]
