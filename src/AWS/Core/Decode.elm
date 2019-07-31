@@ -1,38 +1,48 @@
-module AWS.Core.Decode exposing
-    ( Metadata
-    , Response
-    , ResponseWrapper
-    , ResultDecoder(..)
-    , dict
-    , optional
-    , required
-    , responseWrapperDecoder
-    )
+module AWS.Core.Decode exposing (Metadata, Response, ResponseWrapper, ResultDecoder(..), dict, optional, required, responseWrapperDecoder)
+
+{-| Helper functions for decoding AWS calls.
+
+
+# Helpers
+
+@docs Metadata, Response, ResponseWrapper, ResultDecoder, dict, optional, required, responseWrapperDecoder
+
+-}
 
 import Dict exposing (Dict)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
 
 
+{-| A wrapped response
+-}
 type alias ResponseWrapper a =
     { response : Response a }
 
 
+{-| A response consisting of data and meta-data.
+-}
 type alias Response a =
     { data : a
     , metadata : Metadata
     }
 
 
+{-| Response meta-data.
+-}
 type alias Metadata =
     { requestId : String }
 
 
+{-| Decoder type that can take a constant value or decode some string.
+-}
 type ResultDecoder a
     = ResultDecoder String (JD.Decoder a)
     | FixedResult a
 
 
+{-| Decodes a ResponseWrapper.
+-}
 responseWrapperDecoder : String -> ResultDecoder a -> JD.Decoder (ResponseWrapper a)
 responseWrapperDecoder actionName resultDecoder =
     JD.succeed ResponseWrapper
@@ -60,6 +70,9 @@ resultWrapperDecoder resultDecoder =
 -- required and optional member decoders
 
 
+{-| Tries to decode one of an set of field names against a decoder. If no
+matching field succeeds with the decoder, the decoding will fail.
+-}
 required : List String -> JD.Decoder a -> JD.Decoder a
 required fields decoder =
     tryFields fields decoder
@@ -79,6 +92,9 @@ required fields decoder =
             )
 
 
+{-| Tries to decode one of an optional set of field names against a decoder. If no
+matching field succeeds with the decoder, Nothing will be decoded.
+-}
 optional : List String -> JD.Decoder a -> JD.Decoder (Maybe a)
 optional fields decoder =
     tryFields fields decoder
@@ -110,6 +126,9 @@ tryFields fields decoder =
 -- dict and helpers
 
 
+{-| Decodes into a dict using either the standard Dict encoding as records of
+"Name" and "Value" field pairs.
+-}
 dict : JD.Decoder a -> JD.Decoder (Dict String a)
 dict valueDecoder =
     [ JD.dict valueDecoder

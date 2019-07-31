@@ -1,12 +1,13 @@
-module AWS.Core.Encode exposing
-    ( addListToQueryArgs
-    , addOneToQueryArgs
-    , addRecordToQueryArgs
-    , bool
-    , optionalMember
-    , unchangedQueryArgs
-    , uri
-    )
+module AWS.Core.Encode exposing (addListToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri)
+
+{-| Helper functions for building AWS calls.
+
+
+# Helpers
+
+@docs addListToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri
+
+-}
 
 import Char
 import Regex
@@ -55,6 +56,8 @@ uri x =
 -- QUERY ENCODE SIMPLE TYPES
 
 
+{-| Turn a bool into a stirng.
+-}
 bool : Bool -> String
 bool val =
     if val then
@@ -68,16 +71,22 @@ bool val =
 -- QUERY ENCODE IN A PIPELINE
 
 
+{-| Identity function
+-}
 unchangedQueryArgs : List ( String, String ) -> List ( String, String )
 unchangedQueryArgs args =
     args
 
 
+{-| Adds a key value pair to a list.
+-}
 addOneToQueryArgs : (a -> String) -> String -> a -> List ( String, String ) -> List ( String, String )
 addOneToQueryArgs transform key value =
     (::) ( key, transform value )
 
 
+{-| Adds a list of key/value pairs to another list, optioanlly flattening them.
+-}
 addListToQueryArgs :
     Bool
     -> (a -> List ( String, String ) -> List ( String, String ))
@@ -119,6 +128,8 @@ listItemKey flattened index base key =
            )
 
 
+{-| Adds a record of key/value pairs to a list.
+-}
 addRecordToQueryArgs :
     (record -> List ( String, String ))
     -> String
@@ -145,6 +156,8 @@ addRecordToQueryArgs transform base record =
         |> List.append
 
 
+{-| Adds an optional key/value pair to a list.
+-}
 optionalMember :
     (a -> b)
     -> ( String, Maybe a )
