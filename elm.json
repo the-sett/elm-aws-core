@@ -1,9 +1,9 @@
 {
     "type": "package",
-    "name": "ktonon/elm-aws-core",
+    "name": "the-sett/elm-aws-core",
     "summary": "Make authenticated REST requests to AWS services.",
     "license": "Apache-2.0",
-    "version": "1.1.0",
+    "version": "1.0.0",
     "exposed-modules": [
         "AWS.Core.Credentials",
         "AWS.Core.Http",
