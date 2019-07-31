@@ -35,12 +35,12 @@ type ResultDecoder a
 
 responseWrapperDecoder : String -> ResultDecoder a -> JD.Decoder (ResponseWrapper a)
 responseWrapperDecoder actionName resultDecoder =
-    JDP.decode ResponseWrapper
+    JD.succeed ResponseWrapper
         |> JDP.required (actionName ++ "Response")
-            (JDP.decode Response
+            (JD.succeed Response
                 |> resultWrapperDecoder resultDecoder
                 |> JDP.required "ResponseMetadata"
-                    (JDP.decode Metadata
+                    (JD.succeed Metadata
                         |> JDP.required "RequestId" JD.string
                     )
             )
@@ -67,7 +67,7 @@ required fields decoder =
             (\maybeValue ->
                 case maybeValue of
                     Nothing ->
-                        JD.fail ("Missing required fields with key of either: " ++ toString fields)
+                        JD.fail ("Missing required fields with key of either: " ++ String.join ", " fields)
 
                     Just value ->
                         case JD.decodeValue decoder value of
@@ -75,7 +75,7 @@ required fields decoder =
                                 JD.succeed x
 
                             Err err ->
-                                JD.fail (toString err)
+                                JD.fail (JD.errorToString err)
             )
 
 
@@ -94,7 +94,7 @@ optional fields decoder =
                                 JD.succeed (Just x)
 
                             Err err ->
-                                JD.fail (toString err)
+                                JD.fail (JD.errorToString err)
             )
 
 
@@ -135,6 +135,6 @@ type alias NameValuePair a =
 
 nameValueDecoder : JD.Decoder a -> JD.Decoder (NameValuePair a)
 nameValueDecoder valueDecoder =
-    JDP.decode NameValuePair
+    JD.succeed NameValuePair
         |> JDP.required "Name" JD.string
         |> JDP.required "Value" valueDecoder
