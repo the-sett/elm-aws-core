@@ -8,6 +8,8 @@
         "AWS.Core.Credentials",
         "AWS.Core.Http",
         "AWS.Core.Service",
+        "AWS.Core.Encode",
+        "AWS.Core.Decode",
         "AWS"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
