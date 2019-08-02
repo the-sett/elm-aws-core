@@ -1,11 +1,11 @@
-module AWS.Core.Encode exposing (addListToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri)
+module AWS.Core.Encode exposing (addListToQueryArgs, addDictToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri)
 
 {-| Helper functions for building AWS calls.
 
 
 # Helpers
 
-@docs addListToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri
+@docs addListToQueryArgs, addDictToQueryArgs, addOneToQueryArgs, addRecordToQueryArgs, bool, optionalMember, unchangedQueryArgs, uri
 
 -}
 
