@@ -10,6 +10,7 @@ module AWS.Core.Encode exposing (addListToQueryArgs, addOneToQueryArgs, addRecor
 -}
 
 import Char
+import Dict exposing (Dict)
 import Regex
 import Url
 import Word.Hex as Hex
@@ -108,6 +109,14 @@ addListToQueryArgs flattened transform base values =
             )
         |> List.concat
         |> List.append
+
+
+addDictToQueryArgs : (a -> String) -> String -> Dict String a -> List ( String, String ) -> List ( String, String )
+addDictToQueryArgs toStringFn key dict queryArgs =
+    Dict.foldl
+        (\k v accum -> addOneToQueryArgs toStringFn k v accum)
+        queryArgs
+        dict
 
 
 listItemKey : Bool -> Int -> String -> String -> String
