@@ -111,6 +111,8 @@ addListToQueryArgs flattened transform base values =
         |> List.append
 
 
+{-| Adds a dict of key/value pairs to another list.
+-}
 addDictToQueryArgs : (a -> String) -> String -> Dict String a -> List ( String, String ) -> List ( String, String )
 addDictToQueryArgs toStringFn key dict queryArgs =
     Dict.foldl
