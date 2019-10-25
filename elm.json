@@ -3,7 +3,7 @@
     "name": "the-sett/elm-aws-core",
     "summary": "Make authenticated REST requests to AWS services.",
     "license": "Apache-2.0",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "exposed-modules": [
         "AWS.Core.Credentials",
         "AWS.Core.Http",
