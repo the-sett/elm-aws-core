@@ -1,4 +1,4 @@
-** Status ** - 25-Oct-2019 - Published as version 1.2.0. This is the code ported to Elm 0.19 from the
+**Status** - 25-Oct-2019 - Published as version 1.2.0. This is the code ported to Elm 0.19 from the
 original work by KTonon. It is untested, and the code generator for the service stubs is still being
 worked on. Therefore this should be considered a work in progress and not ready for use.
 
