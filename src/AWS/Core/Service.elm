@@ -1,10 +1,8 @@
 module AWS.Core.Service exposing
     ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..), Endpoint(..)
+    , signerEnum, protocolEnum, timestampFormatEnum
     , defineGlobal, defineRegional
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-    , ec2, json, query, restJson, restXml
-    , signV4, signS3
-    , iso8601, rfc822, unixTimestamp
     , endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
     )
 
@@ -25,6 +23,7 @@ module AWS.Core.Service exposing
 # Types
 
 @docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat, Endpoint
+@docs signerEnum, protocolEnum, timestampFormatEnum
 
 
 # Constructors
@@ -69,6 +68,10 @@ otherwise are not required.
 @docs endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
 
 -}
+
+import Enum exposing (Enum)
+
+
 
 -- SERVICES
 
@@ -303,16 +306,17 @@ signer (Service spec) =
 -}
 jsonContentType : Service -> String
 jsonContentType (Service spec) =
-    (if spec.protocol == restXml then
-        "application/xml"
+    (case spec.protocol of
+        REST_XML ->
+            "application/xml"
 
-     else
-        case spec.jsonVersion of
-            Just apiVersion ->
-                "application/x-amz-json-" ++ apiVersion
+        _ ->
+            case spec.jsonVersion of
+                Just apiVersion ->
+                    "application/x-amz-json-" ++ apiVersion
 
-            Nothing ->
-                "application/json"
+                Nothing ->
+                    "application/json"
     )
         ++ "; charset=utf-8"
 
@@ -321,11 +325,12 @@ jsonContentType (Service spec) =
 -}
 acceptType : Service -> String
 acceptType (Service spec) =
-    if spec.protocol == restXml then
-        "application/xml"
+    case spec.protocol of
+        REST_XML ->
+            "application/xml"
 
-    else
-        "application/json"
+        _ ->
+            "application/json"
 
 
 
@@ -409,39 +414,32 @@ type Protocol
     | REST_XML
 
 
-{-| EC2 request protocol.
--}
-ec2 : Protocol
-ec2 =
-    EC2
+protocolEnum : Enum Protocol
+protocolEnum =
+    Enum.define
+        [ EC2
+        , JSON
+        , QUERY
+        , REST_JSON
+        , REST_XML
+        ]
+        (\val ->
+            case val of
+                EC2 ->
+                    "ec2"
 
+                JSON ->
+                    "json"
 
-{-| JSON request protocol.
--}
-json : Protocol
-json =
-    JSON
+                QUERY ->
+                    "query"
 
+                REST_JSON ->
+                    "rest-json"
 
-{-| QUERY request protocol.
--}
-query : Protocol
-query =
-    QUERY
-
-
-{-| REST\_JSON request protocol.
--}
-restJson : Protocol
-restJson =
-    REST_JSON
-
-
-{-| REST\_XML request protocol.
--}
-restXml : Protocol
-restXml =
-    REST_XML
+                REST_XML ->
+                    "rest-xml"
+        )
 
 
 
@@ -453,21 +451,20 @@ type Signer
     | SignS3
 
 
-{-| Use V4 signing.
--}
-signV4 : Signer
-signV4 =
-    SignV4
+signerEnum : Enum Signer
+signerEnum =
+    Enum.define
+        [ SignV4
+        , SignS3
+        ]
+        (\val ->
+            case val of
+                SignV4 ->
+                    "v4"
 
-
-{-| A variation on V4 signing for use with AWS S3.
-
-See <http://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html#canonical-request>
-
--}
-signS3 : Signer
-signS3 =
-    SignS3
+                SignS3 ->
+                    "s3"
+        )
 
 
 
@@ -478,6 +475,26 @@ type TimestampFormat
     = ISO8601
     | RFC822
     | UnixTimestamp
+
+
+timestampFormatEnum : Enum TimestampFormat
+timestampFormatEnum =
+    Enum.define
+        [ ISO8601
+        , RFC822
+        , UnixTimestamp
+        ]
+        (\val ->
+            case val of
+                ISO8601 ->
+                    "iso8601"
+
+                RFC822 ->
+                    "rfc822"
+
+                UnixTimestamp ->
+                    "unixTimestamp"
+        )
 
 
 {-| Use the timestamp format ISO8601.
