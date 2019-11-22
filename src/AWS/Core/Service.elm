@@ -38,27 +38,6 @@ Use either one of these to create a service definition.
 @docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
 
 
-# Protocols
-
-Use these functions to specify the AWS request protocol used by the service.
-
-@docs ec2, json, query, restJson, restXml
-
-
-# Signatures
-
-Use these functions to specify the signature version used by a service.
-
-@docs signV4, signS3
-
-
-# Timestamp Formats
-
-Use these functions to specify the timestamp format used by a service.
-
-@docs iso8601, rfc822, unixTimestamp
-
-
 # Attributes
 
 These functions are exposed so that [AWS.Core.Http](AWS-Core-Http) can properly
@@ -406,6 +385,8 @@ defaultRegionResolver endpoint =
 -- PROTOCOLS
 
 
+{-| Defines the different protocols that AWS services can use.
+-}
 type Protocol
     = EC2
     | JSON
@@ -414,6 +395,8 @@ type Protocol
     | REST_XML
 
 
+{-| Enumerates the protocols.
+-}
 protocolEnum : Enum Protocol
 protocolEnum =
     Enum.define
@@ -446,11 +429,15 @@ protocolEnum =
 -- SIGNERS
 
 
+{-| Defines the different signing schemes that AWS services can use.
+-}
 type Signer
     = SignV4
     | SignS3
 
 
+{-| Enumerates the signing schemes.
+-}
 signerEnum : Enum Signer
 signerEnum =
     Enum.define
@@ -471,12 +458,16 @@ signerEnum =
 -- TIMESTAMP FORMATS
 
 
+{-| Defines the different timestamp formats that AWS services can use.
+-}
 type TimestampFormat
     = ISO8601
     | RFC822
     | UnixTimestamp
 
 
+{-| Enumerates the timestamp formats.
+-}
 timestampFormatEnum : Enum TimestampFormat
 timestampFormatEnum =
     Enum.define
