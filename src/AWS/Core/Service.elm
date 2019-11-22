@@ -1,5 +1,5 @@
 module AWS.Core.Service exposing
-    ( Service, ApiVersion, Region, Protocol, Signer, TimestampFormat, Endpoint(..)
+    ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..), Endpoint(..)
     , defineGlobal, defineRegional
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
     , ec2, json, query, restJson, restXml
@@ -69,15 +69,6 @@ otherwise are not required.
 @docs endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
 
 -}
-
-import AWS.Core.InternalTypes
-    exposing
-        ( Protocol(..)
-        , Signer(..)
-        , TimestampFormat(..)
-        )
-
-
 
 -- SERVICES
 
@@ -410,13 +401,12 @@ defaultRegionResolver endpoint =
 -- PROTOCOLS
 
 
-{-| Enumerates AWS request protocols.
-
-See [Protocols](#protocols) for constructors.
-
--}
-type alias Protocol =
-    AWS.Core.InternalTypes.Protocol
+type Protocol
+    = EC2
+    | JSON
+    | QUERY
+    | REST_JSON
+    | REST_XML
 
 
 {-| EC2 request protocol.
@@ -458,13 +448,9 @@ restXml =
 -- SIGNERS
 
 
-{-| Enumerates AWS signature versions.
-
-See [Signatures](#signatures) for constructors.
-
--}
-type alias Signer =
-    AWS.Core.InternalTypes.Signer
+type Signer
+    = SignV4
+    | SignS3
 
 
 {-| Use V4 signing.
@@ -488,13 +474,10 @@ signS3 =
 -- TIMESTAMP FORMATS
 
 
-{-| Enumerates timestamp formats.
-
-See [Timestamp Formats](#timestamp-formats) for constructors.
-
--}
-type alias TimestampFormat =
-    AWS.Core.InternalTypes.TimestampFormat
+type TimestampFormat
+    = ISO8601
+    | RFC822
+    | UnixTimestamp
 
 
 {-| Use the timestamp format ISO8601.

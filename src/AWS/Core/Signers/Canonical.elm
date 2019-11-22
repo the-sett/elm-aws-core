@@ -2,7 +2,7 @@ module AWS.Core.Signers.Canonical exposing (canonical, canonicalHeaders, canonic
 
 import AWS.Core.Body exposing (Body)
 import AWS.Core.Encode
-import AWS.Core.InternalTypes exposing (Signer(..))
+import AWS.Core.Service as Service exposing (Service, Signer(..))
 import Crypto.Hash exposing (sha256)
 import Regex
 
