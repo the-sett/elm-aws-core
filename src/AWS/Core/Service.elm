@@ -3,7 +3,7 @@ module AWS.Core.Service exposing
     , signerEnum, protocolEnum, timestampFormatEnum
     , defineGlobal, defineRegional
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-    , endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
+    , endpointPrefix, region, host, protocol, signer, targetPrefix, jsonContentType, acceptType
     )
 
 {-| AWS service configuration.
@@ -44,7 +44,7 @@ These functions are exposed so that [AWS.Core.Http](AWS-Core-Http) can properly
 sign requests. They can be useful for debugging, testing, and logging, but
 otherwise are not required.
 
-@docs endpointPrefix, region, host, signer, targetPrefix, jsonContentType, acceptType
+@docs endpointPrefix, region, host, protocol, signer, targetPrefix, jsonContentType, acceptType
 
 -}
 
@@ -93,16 +93,16 @@ define :
     -> Signer
     -> (Service -> Service)
     -> Service
-define prefix apiVersion protocol signerType extra =
+define prefix apiVersion proto signerType extra =
     Service
         { endpointPrefix = prefix
-        , protocol = protocol
+        , protocol = proto
         , signer = signerType
         , apiVersion = apiVersion
         , jsonVersion = Nothing
         , signingName = Nothing
         , targetPrefix = defaultTargetPrefix prefix apiVersion
-        , timestampFormat = defaultTimestampFormat protocol
+        , timestampFormat = defaultTimestampFormat proto
         , xmlNamespace = Nothing
         , endpoint = GlobalEndpoint
         , hostResolver = defaultHostResolver
@@ -166,9 +166,9 @@ defineRegional :
     -> (Service -> Service)
     -> Region
     -> Service
-defineRegional prefix apiVersion protocol signerType extra rgn =
+defineRegional prefix apiVersion proto signerType extra rgn =
     case
-        define prefix apiVersion protocol signerType extra
+        define prefix apiVersion proto signerType extra
     of
         Service s ->
             Service { s | endpoint = RegionalEndpoint rgn }
@@ -279,6 +279,11 @@ endpointPrefix (Service spec) =
 signer : Service -> Signer
 signer (Service spec) =
     spec.signer
+
+
+protocol : Service -> Protocol
+protocol (Service spec) =
+    spec.protocol
 
 
 {-| Gets the service JSON content type header value.
@@ -527,8 +532,8 @@ defaultTargetPrefix prefix apiVersion =
 
 -}
 defaultTimestampFormat : Protocol -> TimestampFormat
-defaultTimestampFormat protocol =
-    case protocol of
+defaultTimestampFormat proto =
+    case proto of
         JSON ->
             UnixTimestamp
 

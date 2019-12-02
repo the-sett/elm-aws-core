@@ -14,7 +14,8 @@ import Json.Decode exposing (Decoder)
 
 
 type alias Unsigned a =
-    { method : String
+    { name : String
+    , method : String
     , path : String
     , body : Body
     , decoder : Decoder a
@@ -27,11 +28,13 @@ type alias Unsigned a =
 unsigned :
     String
     -> String
+    -> String
     -> Body
     -> Decoder a
     -> Unsigned a
-unsigned method uri body decoder =
+unsigned name method uri body decoder =
     Unsigned
+        name
         method
         uri
         body

@@ -30,13 +30,13 @@ Examples assume the following imports:
 import AWS.Core.Body
 import AWS.Core.Credentials exposing (Credentials)
 import AWS.Core.Request
-import AWS.Core.Service as Service exposing (Service)
+import AWS.Core.Service as Service exposing (Protocol(..), Service, Signer(..))
 import AWS.Core.Signers.V4 as V4
 import Http
 import Json.Decode
 import Json.Encode
-import Task
-import Time
+import Task exposing (Task)
+import Time exposing (Posix)
 
 
 {-| Holds an unsigned AWS HTTP request.
@@ -134,13 +134,14 @@ stringBody =
 
 -}
 request :
-    Method
+    String
+    -> Method
     -> Path
     -> Body
     -> Json.Decode.Decoder a
     -> Request a
-request method =
-    AWS.Core.Request.unsigned (methodToString method)
+request name method =
+    AWS.Core.Request.unsigned name (methodToString method)
 
 
 {-| Appends headers to an AWS HTTP unsigned request.
@@ -195,9 +196,26 @@ send :
     -> Credentials
     -> Request a
     -> Task.Task Http.Error a
-send serviceConfig credentials req =
-    Time.now
-        |> Task.andThen
-            (\posix ->
-                V4.sign serviceConfig credentials posix req
-            )
+send service credentials req =
+    let
+        prepareRequest : Request a -> Request a
+        prepareRequest innerReq =
+            case Service.protocol service of
+                JSON ->
+                    addHeaders
+                        [ ( "x-amz-target", Service.targetPrefix service ++ "." ++ innerReq.name ) ]
+                        innerReq
+
+                _ ->
+                    innerReq
+
+        signWithTimestamp : Request a -> Posix -> Task Http.Error a
+        signWithTimestamp innerReq posix =
+            case Service.signer service of
+                SignV4 ->
+                    V4.sign service credentials posix innerReq
+
+                SignS3 ->
+                    Debug.todo "S3 signature scheme"
+    in
+    Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
