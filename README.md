@@ -1,3 +1,7 @@
+**Contacts for Support**
+- @rupertlssmith on https://elmlang.slack.com
+- @rupert on https://discourse.elm-lang.org
+
 **Status** - 04-Jan-2019 - Published as version 3.0.0
 The AWS Cognito service is being published based on this.
 The code generator is capable of generating 'json' based services with the V4 signing
