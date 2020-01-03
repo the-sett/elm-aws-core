@@ -281,6 +281,8 @@ signer (Service spec) =
     spec.signer
 
 
+{-| Protocol of the service.
+-}
 protocol : Service -> Protocol
 protocol (Service spec) =
     spec.protocol
