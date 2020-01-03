@@ -1,6 +1,8 @@
-**Status** - 22-Nov-2019 - Published as version 2.0.0 This is the code ported to Elm 0.19 from the
-original work by KTonon. It is untested, and the code generator for the service stubs is still being
-worked on. Therefore this should be considered a work in progress and not ready for use.
+**Status** - 04-Jan-2019 - Published as version 3.0.0
+The AWS Cognito service is being published based on this.
+The code generator is capable of generating 'json' based services with the V4 signing
+scheme.
+This is still a work in progress but is able to support a first set of AWS services.
 
 # elm-aws-core
 
