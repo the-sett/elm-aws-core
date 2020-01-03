@@ -216,6 +216,6 @@ send service credentials req =
                     V4.sign service credentials posix innerReq
 
                 SignS3 ->
-                    Debug.todo "S3 signature scheme"
+                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented.")
     in
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
