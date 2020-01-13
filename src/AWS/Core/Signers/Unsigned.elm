@@ -1,4 +1,4 @@
-module AWS.Core.Signers.Unsigned exposing (filterHeaders, formatPosix, headers, sign)
+module AWS.Core.Signers.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
 
 import AWS.Core.Body exposing (Body, explicitMimetype)
 import AWS.Core.Request exposing (Unsigned)
@@ -12,12 +12,14 @@ import Task exposing (Task)
 import Time exposing (Posix)
 
 
-sign :
+{-| Prepares the request without signing it.
+-}
+prepare :
     Service
     -> Posix
     -> Unsigned a
     -> Task Http.Error a
-sign service date req =
+prepare service date req =
     let
         responseDecoder response =
             case response of

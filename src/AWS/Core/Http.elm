@@ -243,6 +243,6 @@ sendUnsigned service req =
 
         withTimestamp : Request a -> Posix -> Task Http.Error a
         withTimestamp innerReq posix =
-            Unsigned.sign service posix innerReq
+            Unsigned.prepare service posix innerReq
     in
     Time.now |> Task.andThen (prepareRequest req |> withTimestamp)
