@@ -1,5 +1,5 @@
 module AWS.Core.Http exposing
-    ( Request, request, addHeaders, addQuery, setResponseParser, send, Method(..), Path
+    ( Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method(..), Path
     , Body, MimeType, emptyBody, stringBody, jsonBody
     )
 
@@ -18,7 +18,7 @@ Examples assume the following imports:
 
 # Requests
 
-@docs Request, request, addHeaders, addQuery, setResponseParser, send, Method, Path
+@docs Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method, Path
 
 
 # Body
@@ -29,11 +29,12 @@ Examples assume the following imports:
 
 import AWS.Core.Body
 import AWS.Core.Credentials exposing (Credentials)
-import AWS.Core.Request
+import AWS.Core.Request exposing (Unsigned)
 import AWS.Core.Service as Service exposing (Protocol(..), Service, Signer(..))
+import AWS.Core.Signers.Unsigned as Unsigned
 import AWS.Core.Signers.V4 as V4
 import Http
-import Json.Decode
+import Json.Decode as Decode
 import Json.Encode
 import Task exposing (Task)
 import Time exposing (Posix)
@@ -138,7 +139,7 @@ request :
     -> Method
     -> Path
     -> Body
-    -> Json.Decode.Decoder a
+    -> Decode.Decoder a
     -> Request a
 request name method =
     AWS.Core.Request.unsigned name (methodToString method)
@@ -219,3 +220,29 @@ send service credentials req =
                     Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented.")
     in
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
+
+
+{-| Sends an AWS Request wihtout signing it.
+-}
+sendUnsigned :
+    Service
+    -> Request a
+    -> Task.Task Http.Error a
+sendUnsigned service req =
+    let
+        prepareRequest : Request a -> Request a
+        prepareRequest innerReq =
+            case Service.protocol service of
+                JSON ->
+                    addHeaders
+                        [ ( "x-amz-target", Service.targetPrefix service ++ "." ++ innerReq.name ) ]
+                        innerReq
+
+                _ ->
+                    innerReq
+
+        withTimestamp : Request a -> Posix -> Task Http.Error a
+        withTimestamp innerReq posix =
+            Unsigned.sign service posix innerReq
+    in
+    Time.now |> Task.andThen (prepareRequest req |> withTimestamp)
