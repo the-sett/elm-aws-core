@@ -43,8 +43,8 @@ sign service creds date req =
                     Http.BadStatus metadata.statusCode |> Err
 
                 Http.GoodStatus_ metadata body ->
-                    Decode.decodeString req.decoder body
-                        |> Result.mapError (\decodeError -> Decode.errorToString decodeError |> Http.BadBody)
+                    req.decoder body
+                        |> Result.mapError Http.BadBody
 
         resolver =
             case req.responseParser of

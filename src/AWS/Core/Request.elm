@@ -18,7 +18,7 @@ type alias Unsigned a =
     , method : String
     , path : String
     , body : Body
-    , decoder : Decoder a
+    , decoder : String -> Result String a
     , headers : List ( String, String )
     , query : List ( String, String )
     , responseParser : Maybe (Http.Response String -> Result Http.Error a)
@@ -30,7 +30,7 @@ unsigned :
     -> String
     -> String
     -> Body
-    -> Decoder a
+    -> (String -> Result String a)
     -> Unsigned a
 unsigned name method uri body decoder =
     Unsigned
