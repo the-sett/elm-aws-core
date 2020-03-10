@@ -2,11 +2,13 @@
 - @rupertlssmith on https://elmlang.slack.com
 - @rupert on https://discourse.elm-lang.org
 
-**Status** - 04-Jan-2019 - Published as version 3.0.0
-The AWS Cognito service is being published based on this.
-The code generator is capable of generating 'json' based services with the V4 signing
-scheme.
-This is still a work in progress but is able to support a first set of AWS services.
+**Status** - 08-Mar-2019 - Published as version 4.0.0
+
+Requests do not have to be build with JSON decoders, so it should be possible to
+get the XML based services working now.
+
+The code generator is capable of generating 'JSON' based services with the V4 signing scheme. The AWS Cognito service is being published based on this. This
+is still a work in progress but is able to support a first set of AWS services.
 
 # elm-aws-core
 
