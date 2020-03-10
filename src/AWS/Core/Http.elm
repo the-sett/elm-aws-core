@@ -131,7 +131,7 @@ stringBody =
 
 {-| Create an AWS HTTP unsigned request.
 
-    request GET "/" emptyBody Json.Decode.value
+    request GET "/" emptyBody decodeFn
         |> toString
     --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
 
