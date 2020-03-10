@@ -1,6 +1,8 @@
 module AWS.Core.Http exposing
-    ( Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method(..), Path
+    ( Request, request, requestWithJsonDecoder, addHeaders
+    , setResponseParser, send, sendUnsigned, Method(..), Path
     , Body, MimeType, emptyBody, stringBody, jsonBody
+    , addQuery
     )
 
 {-| AWS requests and responses.
@@ -18,7 +20,8 @@ Examples assume the following imports:
 
 # Requests
 
-@docs Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method, Path
+@docs Request, request, requestWithJsonDecoder, addHeaders, addQuer
+@docs setResponseParser, send, sendUnsigned, Method, Path
 
 
 # Body
