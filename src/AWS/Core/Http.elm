@@ -1,5 +1,6 @@
 module AWS.Core.Http exposing
-    ( Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method(..), Path
+    ( Request, request, requestWithJsonDecoder, addHeaders, addQuery
+    , setResponseParser, send, sendUnsigned, Method(..), Path
     , Body, MimeType, emptyBody, stringBody, jsonBody
     )
 
@@ -18,7 +19,8 @@ Examples assume the following imports:
 
 # Requests
 
-@docs Request, request, addHeaders, addQuery, setResponseParser, send, sendUnsigned, Method, Path
+@docs Request, request, requestWithJsonDecoder, addHeaders, addQuery
+@docs setResponseParser, send, sendUnsigned, Method, Path
 
 
 # Body
@@ -139,10 +141,34 @@ request :
     -> Method
     -> Path
     -> Body
+    -> (String -> Result String a)
+    -> Request a
+request name method path body decoder =
+    AWS.Core.Request.unsigned name (methodToString method) path body decoder
+
+
+{-| Create an AWS HTTP unsigned request that expects a JSON response.
+
+    request GET "/" emptyBody Json.Decode.value
+        |> toString
+    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
+
+-}
+requestWithJsonDecoder :
+    String
+    -> Method
+    -> Path
+    -> Body
     -> Decode.Decoder a
     -> Request a
-request name method =
-    AWS.Core.Request.unsigned name (methodToString method)
+requestWithJsonDecoder name method path body decoder =
+    request name
+        method
+        path
+        body
+        (Decode.decodeString decoder
+            >> Result.mapError Decode.errorToString
+        )
 
 
 {-| Appends headers to an AWS HTTP unsigned request.
