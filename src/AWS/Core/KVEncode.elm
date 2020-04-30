@@ -29,27 +29,37 @@ which can be used to build headers or query parameters.
 import Dict exposing (Dict)
 
 
+{-| Holds pairs of `(String, String)` tuples.
+-}
 type KVPairs
     = Pair String String
     | Pairs (List ( String, String ))
     | Skip
 
 
+{-| Encodes a String (identity function).
+-}
 string : String -> String
 string =
     identity
 
 
+{-| Encodes an Int as a String.
+-}
 int : Int -> String
 int =
     String.fromInt
 
 
+{-| Encodes an Float as a String.
+-}
 float : Float -> String
 float =
     String.fromFloat
 
 
+{-| Encodes an Bool as a String ("true" or "false").
+-}
 bool : Bool -> String
 bool val =
     if val then
@@ -59,6 +69,8 @@ bool val =
         "false"
 
 
+{-| Combines a Dict with a String encoder for its values into a set of `KVPairs`.
+-}
 dict : Dict String a -> (a -> String) -> KVPairs
 dict vals enc =
     Dict.foldr
@@ -68,11 +80,15 @@ dict vals enc =
         |> Pairs
 
 
+{-| Encodes a pair of `(String, a)` into `KVPairs`.
+-}
 field : (a -> String) -> ( String, a ) -> KVPairs
 field enc ( name, val ) =
     Pair name (enc val)
 
 
+{-| Encodes a pair of `(String, Maybe a)` into `KVPairs`.
+-}
 optional : (a -> String) -> ( String, Maybe a ) -> KVPairs
 optional enc ( name, maybeVal ) =
     case maybeVal of
@@ -83,11 +99,16 @@ optional enc ( name, maybeVal ) =
             Pair name (enc val)
 
 
+{-| Nested lists of (String, String) pairs may result from inner objects,
+this turns them into `KVPairs` that will be expanded into a flattened list.
+-}
 denest : List ( String, String ) -> KVPairs
 denest fields =
     Pairs fields
 
 
+{-| Lists sets of `KVPairs` into a flattened list of `(String, String)` pairs.
+-}
 kvlist : List KVPairs -> List ( String, String )
 kvlist fields =
     List.foldr
