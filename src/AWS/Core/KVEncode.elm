@@ -145,19 +145,50 @@ object fields =
 --
 -- A field with a single complex value:
 -- Field.InnerField
+-- Field.InnerField2
+--
+-- A field with a simple value:
+-- Field
 
 
 encode : KVPairs -> List ( String, String )
 encode kvp =
+    let
+        encodeInner : KVPairs -> String -> List ( String, String ) -> List ( String, String )
+        encodeInner innerKvp fldName accum =
+            case innerKvp of
+                Val val ->
+                    ( fldName, val ) :: accum
+
+                ListKVPairs vals ->
+                    List.foldr
+                        (\val ( idx, innerAccum ) ->
+                            ( idx + 1
+                            , encodeInner val (fldName ++ ".member." ++ String.fromInt idx) innerAccum
+                            )
+                        )
+                        ( 1, accum )
+                        vals
+                        |> Tuple.second
+
+                Object flds ->
+                    List.foldr
+                        (\( innerFldName, val ) innerAccum -> encodeInner val (fldName ++ "." ++ innerFldName) innerAccum)
+                        accum
+                        flds
+    in
     case kvp of
         Val _ ->
             []
 
-        ListKVPairs vals ->
+        ListKVPairs _ ->
             []
 
         Object flds ->
-            []
+            List.foldr
+                (\( name, val ) accum -> encodeInner val name accum)
+                []
+                flds
 
 
 
