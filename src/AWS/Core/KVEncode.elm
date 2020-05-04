@@ -120,25 +120,20 @@ optional enc ( name, maybeVal ) =
             Pair name (enc val)
 
 
-{-| Lists sets of `KVPairs` into a flattened list of `(String, String)` pairs.
--}
 object : List Field -> KVPairs
 object fields =
-    -- List.foldr
-    --     (\fld accum ->
-    --         case fld of
-    --             Pair name val ->
-    --                 ( name, val ) :: accum
-    --
-    --             Pairs pairs ->
-    --                 List.append pairs accum
-    --
-    --             Skip ->
-    --                 accum
-    --     )
-    --     []
-    --     fields
-    Object []
+    List.foldr
+        (\fld accum ->
+            case fld of
+                Pair name val ->
+                    ( name, val ) :: accum
+
+                Skip ->
+                    accum
+        )
+        []
+        fields
+        |> Object
 
 
 encode : KVPairs -> List ( String, String )
