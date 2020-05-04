@@ -2,7 +2,7 @@ module AWS.Core.KVEncode exposing
     ( KVPairs
     , int, float, string, bool
     , dict
-    , field, optional, denest, kvlist
+    , field, object
     )
 
 {-| KVEncode provides encoders to turn things into list of `(String, String)`
@@ -22,7 +22,7 @@ which can be used to build headers or query parameters.
 
 # Encoders for records with optional fields or nesting.
 
-@docs field, optional, denest, kvlist
+@docs field, object
 
 -}
 
@@ -30,98 +30,87 @@ import Dict exposing (Dict)
 
 
 {-| Holds pairs of `(String, String)` tuples.
+
+A field with a simple list of values:
+Field.member.X
+
+A field with a more complex list of values:
+Field.member.X.InnerField
+
+A field with a single complex value:
+Field.InnerField
+
 -}
 type KVPairs
-    = Pair String String
-    | Pairs (List ( String, String ))
+    = Val String
+    | ListKVPairs (List KVPairs)
+    | Object (List ( String, KVPairs ))
+
+
+type Field
+    = Pair String KVPairs
     | Skip
 
 
 {-| Encodes a String (identity function).
 -}
-string : String -> String
-string =
-    identity
+string : String -> KVPairs
+string val =
+    Val val
 
 
 {-| Encodes an Int as a String.
 -}
-int : Int -> String
-int =
-    String.fromInt
+int : Int -> KVPairs
+int val =
+    String.fromInt val |> Val
 
 
 {-| Encodes an Float as a String.
 -}
-float : Float -> String
-float =
-    String.fromFloat
+float : Float -> KVPairs
+float val =
+    String.fromFloat val |> Val
 
 
 {-| Encodes an Bool as a String ("true" or "false").
 -}
-bool : Bool -> String
+bool : Bool -> KVPairs
 bool val =
     if val then
-        "true"
+        "true" |> Val
 
     else
-        "false"
+        "false" |> Val
 
 
-
--- list :
---     (a -> List ( String, String ) -> List ( String, String ))
---     -> String
---     -> List a
---     -> List ( String, String )
---     -> List ( String, String )
--- list transform base values =
---     values
---         |> List.indexedMap
---             (\index rawValue ->
---                 transform rawValue []
---                     |> List.map
---                         (\( key, value ) ->
---                             ( listItemKey index base key
---                             , value
---                             )
---                         )
---             )
---         |> List.concat
---         |> List.append
---
---
--- listItemKey : Int -> String -> String -> String
--- listItemKey index base key =
---     base
---         ++ ".member."
---         ++ String.fromInt (index + 1)
---         ++ ("." ++ key)
---
+list : (a -> KVPairs) -> List a -> KVPairs
+list enc vals =
+    List.map enc vals |> ListKVPairs
 
 
 {-| Combines a Dict with a String encoder for its values into a set of `KVPairs`.
 -}
-dict : (a -> String) -> Dict String a -> KVPairs
+dict : (a -> KVPairs) -> Dict String a -> KVPairs
 dict enc vals =
-    Dict.foldr
-        (\k v accum -> ( k, enc v ) :: accum)
-        []
-        vals
-        |> Pairs
+    -- Dict.foldr
+    --     (\k v accum -> ( k, enc v ) :: accum)
+    --     []
+    --     vals
+    --     |> Pairs
+    Object []
 
 
 {-| Encodes a pair of `(String, a)` into `KVPairs`.
 -}
-field : (a -> String) -> ( String, a ) -> KVPairs
+field : (a -> KVPairs) -> ( String, a ) -> Field
 field enc ( name, val ) =
     Pair name (enc val)
 
 
 {-| Encodes a pair of `(String, Maybe a)` into `KVPairs`.
 -}
-optional : (a -> String) -> ( String, Maybe a ) -> KVPairs
+optional : (a -> KVPairs) -> ( String, Maybe a ) -> Field
 optional enc ( name, maybeVal ) =
     case maybeVal of
         Nothing ->
@@ -131,29 +120,61 @@ optional enc ( name, maybeVal ) =
             Pair name (enc val)
 
 
-{-| Nested lists of (String, String) pairs may result from inner objects,
-this turns them into `KVPairs` that will be expanded into a flattened list.
--}
-denest : List ( String, String ) -> KVPairs
-denest fields =
-    Pairs fields
-
-
 {-| Lists sets of `KVPairs` into a flattened list of `(String, String)` pairs.
 -}
-kvlist : List KVPairs -> List ( String, String )
-kvlist fields =
-    List.foldr
-        (\fld accum ->
-            case fld of
-                Pair name val ->
-                    ( name, val ) :: accum
+object : List Field -> KVPairs
+object fields =
+    -- List.foldr
+    --     (\fld accum ->
+    --         case fld of
+    --             Pair name val ->
+    --                 ( name, val ) :: accum
+    --
+    --             Pairs pairs ->
+    --                 List.append pairs accum
+    --
+    --             Skip ->
+    --                 accum
+    --     )
+    --     []
+    --     fields
+    Object []
 
-                Pairs pairs ->
-                    List.append pairs accum
 
-                Skip ->
-                    accum
-        )
-        []
-        fields
+encode : KVPairs -> List ( String, String )
+encode _ =
+    []
+
+
+
+-- Example to test compilation against.
+
+
+type alias Example =
+    { field : List Inner
+    , listField : List String
+    , inner : Inner
+    }
+
+
+type alias Inner =
+    { a : String
+    , b : String
+    }
+
+
+encoder : Example -> KVPairs
+encoder val =
+    [ ( "field", val.field ) |> field (list innerEncoder)
+    , ( "listField", val.listField ) |> field (list string)
+    , ( "inner", val.inner ) |> field innerEncoder
+    ]
+        |> object
+
+
+innerEncoder : Inner -> KVPairs
+innerEncoder val =
+    [ ( "a", val.a ) |> field string
+    , ( "b", val.a ) |> field string
+    ]
+        |> object
