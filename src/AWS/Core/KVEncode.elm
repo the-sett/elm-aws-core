@@ -69,10 +69,42 @@ bool val =
         "false"
 
 
+
+-- list :
+--     (a -> List ( String, String ) -> List ( String, String ))
+--     -> String
+--     -> List a
+--     -> List ( String, String )
+--     -> List ( String, String )
+-- list transform base values =
+--     values
+--         |> List.indexedMap
+--             (\index rawValue ->
+--                 transform rawValue []
+--                     |> List.map
+--                         (\( key, value ) ->
+--                             ( listItemKey index base key
+--                             , value
+--                             )
+--                         )
+--             )
+--         |> List.concat
+--         |> List.append
+--
+--
+-- listItemKey : Int -> String -> String -> String
+-- listItemKey index base key =
+--     base
+--         ++ ".member."
+--         ++ String.fromInt (index + 1)
+--         ++ ("." ++ key)
+--
+
+
 {-| Combines a Dict with a String encoder for its values into a set of `KVPairs`.
 -}
-dict : Dict String a -> (a -> String) -> KVPairs
-dict vals enc =
+dict : (a -> String) -> Dict String a -> KVPairs
+dict enc vals =
     Dict.foldr
         (\k v accum -> ( k, enc v ) :: accum)
         []
