@@ -136,9 +136,28 @@ object fields =
         |> Object
 
 
+
+-- A field with a simple list of values:
+-- Field.member.X
+--
+-- A field with a more complex list of values:
+-- Field.member.X.InnerField
+--
+-- A field with a single complex value:
+-- Field.InnerField
+
+
 encode : KVPairs -> List ( String, String )
-encode _ =
-    []
+encode kvp =
+    case kvp of
+        Val _ ->
+            []
+
+        ListKVPairs vals ->
+            []
+
+        Object flds ->
+            []
 
 
 
