@@ -23,7 +23,7 @@ module AWS.Http exposing
 @docs setResponseParser
 
 
-# Build the HTTP Body of a Request
+# Build th HTTP Body of a Request
 
 @docs Body, MimeType
 @docs emptyBody, stringBody, jsonBody
@@ -48,178 +48,8 @@ import Task exposing (Task)
 import Time exposing (Posix)
 
 
-{-| Holds an unsigned AWS HTTP request.
--}
-type alias Request a =
-    AWS.Request.Unsigned a
 
-
-{-| HTTP request methods.
--}
-type Method
-    = DELETE
-    | GET
-    | HEAD
-    | OPTIONS
-    | POST
-    | PUT
-
-
-methodToString : Method -> String
-methodToString meth =
-    case meth of
-        DELETE ->
-            "DELETE"
-
-        GET ->
-            "GET"
-
-        HEAD ->
-            "HEAD"
-
-        OPTIONS ->
-            "OPTIONS"
-
-        POST ->
-            "POST"
-
-        PUT ->
-            "PUT"
-
-
-{-| Request path.
--}
-type alias Path =
-    String
-
-
-{-| Holds a request body.
--}
-type alias Body =
-    AWS.Body.Body
-
-
-{-| MIME type.
-
-See <https://en.wikipedia.org/wiki/Media_type>
-
--}
-type alias MimeType =
-    String
-
-
-{-| Create an empty body.
--}
-emptyBody : Body
-emptyBody =
-    AWS.Body.empty
-
-
-{-| Create a body containing a JSON value.
-
-This will automatically add the `Content-Type: application/json` header.
-
--}
-jsonBody : Json.Encode.Value -> Body
-jsonBody =
-    AWS.Body.json
-
-
-{-| Create a body with a custom MIME type and the given string as content.
-
-    stringBody "text/html" "<html><body><h1>Hello</h1></body></html>"
-
--}
-stringBody : MimeType -> String -> Body
-stringBody =
-    AWS.Body.string
-
-
-{-| Create an AWS HTTP unsigned request.
-
-    request GET "/" emptyBody decodeFn
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
-
--}
-request :
-    String
-    -> Method
-    -> Path
-    -> Body
-    -> (String -> Result String a)
-    -> Request a
-request name method path body decoder =
-    AWS.Request.unsigned name (methodToString method) path body decoder
-
-
-{-| Create an AWS HTTP unsigned request that expects a JSON response.
-
-    request GET "/" emptyBody Json.Decode.value
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
-
--}
-requestWithJsonDecoder :
-    String
-    -> Method
-    -> Path
-    -> Body
-    -> Decode.Decoder a
-    -> Request a
-requestWithJsonDecoder name method path body decoder =
-    request name
-        method
-        path
-        body
-        (Decode.decodeString decoder
-            >> Result.mapError Decode.errorToString
-        )
-
-
-{-| Appends headers to an AWS HTTP unsigned request.
-
-    request GET "/" emptyBody Json.Decode.value
-        |> addHeaders
-            [ ( "x-custom-1", "value 1" )
-            , ( "x-Custom-2", "value 2" )
-            ]
-        |> addHeaders
-            [ ( "x-custom-3", "value 3" )
-            ]
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [(\"x-custom-1\",\"value 1\"),(\"x-Custom-2\",\"value 2\"),(\"x-custom-3\",\"value 3\")], query = [], responseParser = Nothing }"
-
--}
-addHeaders : List ( String, String ) -> Request a -> Request a
-addHeaders headers req =
-    { req | headers = List.append req.headers headers }
-
-
-{-| Appends query arguments to an AWS HTTP unsigned request.
-
-    request GET "/" emptyBody Json.Decode.value
-        |> addQuery
-            [ ( "key1", "value 1" )
-            , ( "Key2", "value 2" )
-            ]
-        |> addQuery
-            [ ( "key3", "value 3" )
-            ]
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [(\"key1\",\"value 1\"),(\"Key2\",\"value 2\"),(\"key3\",\"value 3\")], responseParser = Nothing }"
-
--}
-addQuery : List ( String, String ) -> Request a -> Request a
-addQuery query req =
-    { req | query = List.append req.query query }
-
-
-{-| Set a parser for the entire Http.Response. Overrides the request decoder.
--}
-setResponseParser : (Http.Response String -> Result Http.Error a) -> Request a -> Request a
-setResponseParser parser req =
-    { req | responseParser = Just parser }
+--=== Tasks for sending requests to AWS.
 
 
 {-| Signs and sends an AWS Request.
@@ -278,3 +108,189 @@ sendUnsigned service req =
             Unsigned.prepare service posix innerReq
     in
     Time.now |> Task.andThen (prepareRequest req |> withTimestamp)
+
+
+
+--=== Build a request
+
+
+{-| Holds an unsigned AWS HTTP request.
+-}
+type alias Request a =
+    AWS.Request.Unsigned a
+
+
+{-| HTTP request methods.
+-}
+type Method
+    = DELETE
+    | GET
+    | HEAD
+    | OPTIONS
+    | POST
+    | PUT
+
+
+{-| Request path.
+-}
+type alias Path =
+    String
+
+
+{-| Create an AWS HTTP unsigned request.
+
+    request GET "/" emptyBody decodeFn
+        |> toString
+    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
+
+-}
+request :
+    String
+    -> Method
+    -> Path
+    -> Body
+    -> (String -> Result String a)
+    -> Request a
+request name method path body decoder =
+    AWS.Request.unsigned name (methodToString method) path body decoder
+
+
+{-| Create an AWS HTTP unsigned request that expects a JSON response.
+
+    request GET "/" emptyBody Json.Decode.value
+        |> toString
+    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
+
+-}
+requestWithJsonDecoder :
+    String
+    -> Method
+    -> Path
+    -> Body
+    -> Decode.Decoder a
+    -> Request a
+requestWithJsonDecoder name method path body decoder =
+    request name
+        method
+        path
+        body
+        (Decode.decodeString decoder
+            >> Result.mapError Decode.errorToString
+        )
+
+
+{-| Set a parser for the entire Http.Response. Overrides the request decoder.
+-}
+setResponseParser : (Http.Response String -> Result Http.Error a) -> Request a -> Request a
+setResponseParser parser req =
+    { req | responseParser = Just parser }
+
+
+
+--=== Build th HTTP Body of a Request
+
+
+{-| Holds a request body.
+-}
+type alias Body =
+    AWS.Body.Body
+
+
+{-| MIME type.
+
+See <https://en.wikipedia.org/wiki/Media_type>
+
+-}
+type alias MimeType =
+    String
+
+
+{-| Create an empty body.
+-}
+emptyBody : Body
+emptyBody =
+    AWS.Body.empty
+
+
+{-| Create a body containing a JSON value.
+
+This will automatically add the `Content-Type: application/json` header.
+
+-}
+jsonBody : Json.Encode.Value -> Body
+jsonBody =
+    AWS.Body.json
+
+
+{-| Create a body with a custom MIME type and the given string as content.
+
+    stringBody "text/html" "<html><body><h1>Hello</h1></body></html>"
+
+-}
+stringBody : MimeType -> String -> Body
+stringBody =
+    AWS.Body.string
+
+
+
+--=== Add headers or query parameters to a Request
+
+
+{-| Appends headers to an AWS HTTP unsigned request.
+
+    request GET "/" emptyBody Json.Decode.value
+        |> addHeaders
+            [ ( "x-custom-1", "value 1" )
+            , ( "x-Custom-2", "value 2" )
+            ]
+        |> addHeaders
+            [ ( "x-custom-3", "value 3" )
+            ]
+        |> toString
+    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [(\"x-custom-1\",\"value 1\"),(\"x-Custom-2\",\"value 2\"),(\"x-custom-3\",\"value 3\")], query = [], responseParser = Nothing }"
+
+-}
+addHeaders : List ( String, String ) -> Request a -> Request a
+addHeaders headers req =
+    { req | headers = List.append req.headers headers }
+
+
+{-| Appends query arguments to an AWS HTTP unsigned request.
+
+    request GET "/" emptyBody Json.Decode.value
+        |> addQuery
+            [ ( "key1", "value 1" )
+            , ( "Key2", "value 2" )
+            ]
+        |> addQuery
+            [ ( "key3", "value 3" )
+            ]
+        |> toString
+    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [(\"key1\",\"value 1\"),(\"Key2\",\"value 2\"),(\"key3\",\"value 3\")], responseParser = Nothing }"
+
+-}
+addQuery : List ( String, String ) -> Request a -> Request a
+addQuery query req =
+    { req | query = List.append req.query query }
+
+
+methodToString : Method -> String
+methodToString meth =
+    case meth of
+        DELETE ->
+            "DELETE"
+
+        GET ->
+            "GET"
+
+        HEAD ->
+            "HEAD"
+
+        OPTIONS ->
+            "OPTIONS"
+
+        POST ->
+            "POST"
+
+        PUT ->
+            "PUT"
