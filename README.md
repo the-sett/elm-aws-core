@@ -2,47 +2,51 @@
 - @rupertlssmith on https://elmlang.slack.com
 - @rupert on https://discourse.elm-lang.org
 
-**Status** - 08-Mar-2019 - Published as version 4.0.0
+**Status** - 08-May-2020 - Published as version 6.0.0
 
-Requests do not have to be build with JSON decoders, so it should be possible to
-get the XML based services working now.
+The API has been redesigned. The intermediate `.Core.` module name has been
+removed. The old `Encode` and `Decode` modules were dropped as not very useful
+and poorly designed.
 
-The code generator is capable of generating 'JSON' based services with the V4 signing scheme. The AWS Cognito service is being published based on this. This
-is still a work in progress but is able to support a first set of AWS services.
+A new `KVEncode` module has been introduced to help with building headers and
+query parameters.
+
+AWS URI encoding was taken from the old `Encode` module and put in the `HTTP`
+module.
 
 # elm-aws-core
 
-This package provides the functionality needed to make HTTP requests to AWS services.
+This package provides the functionality needed to make HTTP requests to AWS
+services.
 
-All AWS service calls must be signed correctly, in order to pass on the authorized credentials of the
-caller to the service. AWS has multiple signing schemes that different services use, specifically 'S3'
-and 'V4'.
+All AWS service calls must be signed correctly, in order to pass on the
+authorized credentials of the caller to the service. AWS has multiple signing
+schemes that different services use, specifically 'S3' and 'V4'.
 
-The AWS service portfolio is large with variations in signing schemes, AWS regions and service protocols
-accross it. The aim of this package is to provide functions to sign HTTP requests correctly for all of
-the services available on AWS. The specific service interface can then be implemented with this package
-as a foundational element.
-
-AWS SDK for elm.
-
-The elm-aws-core package provides functions and types that facilitate making
-HTTP requests to AWS services. Use it to create user-friendly clients to
-specific AWS services.
-
+The AWS service portfolio is large with variations in signing schemes, AWS
+regions and service protocols across it. The aim of this package is to provide
+functions to build signed HTTP requests correctly for all of the services
+available on AWS. The specific service interface can then be implemented with
+this package as a foundational element.
 
 ## Modules in this package
 
-  - [AWS.Core.Service](AWS-Core-Service): Create a service definition. Every service client should define its own `Service` definition.
-  - [AWS.Core.Credentials](AWS-Core-Credentials): Create AWS credentials used to sign requests.
-  - [AWS.Core.Http](AWS-Core-Http): Create requests, sign, and send them. Signing and sending a request requires both a `Service` and `Credentials`.
-  - [AWS.Core.Enum](AWS-Core-Enum): Many AWS services define enumerations. This small module provides functions to convert from Elm types to string values.
+  - [AWS.Service](AWS-Service): Build a service definition describing the
+  protocol, signing scheme, base URL and so on for a service.
+  - [AWS.Http](AWS-Http): Build requests, and sign and send them. Signing and
+  sending a request requires both a `Service` and some `Credentials`.
+  - [AWS.Credentials](AWS-Credentials): Create AWS credentials used to sign
+  requests.
+  - [AWS.KVEncode](AWS-KVEncode): Utility for helping to encode Elm data into
+  key-valued string pairs, for setting query parameters or header fields.
+  - [AWS.Uri](AWS-Uri): Utility for URI encoding specific to how AWS does it.
 
 
 ## Usage example
 
-    import AWS.Core.Credentials as Credentials
-    import AWS.Core.Http as Http exposing (Method(..))
-    import AWS.Core.Service as Service
+    import AWS.Credentials as Credentials
+    import AWS.Http as Http exposing (Method(..))
+    import AWS.Service as Service
     import Json.Decode
     import Task
 
