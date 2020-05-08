@@ -5,6 +5,9 @@ module AWS.Core.Request exposing
     , url
     )
 
+{-| Internal representation of a request.
+-}
+
 import AWS.Core.Body as Body exposing (Body)
 import AWS.Core.QueryString as QueryString
 import AWS.Core.Service as Service exposing (Service)
