@@ -1,9 +1,9 @@
-module AWS.Core.Signers.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
+module AWS.Signers.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
 
-import AWS.Core.Body exposing (Body, explicitMimetype)
-import AWS.Core.Request exposing (Unsigned)
-import AWS.Core.Service as Service exposing (Service)
-import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Body exposing (Body, explicitMimetype)
+import AWS.Request exposing (Unsigned)
+import AWS.Service as Service exposing (Service)
+import AWS.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Http
 import Iso8601
 import Json.Decode as Decode
@@ -52,8 +52,8 @@ prepare service date req =
         , headers =
             headers service date req.body req.headers
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Core.Request.url service req
-        , body = AWS.Core.Body.toHttp req.body
+        , url = AWS.Request.url service req
+        , body = AWS.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing
         }

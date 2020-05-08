@@ -1,4 +1,4 @@
-module AWS.Core.Uri exposing (percentEncode)
+module AWS.Uri exposing (percentEncode)
 
 {-| Helper functions for encoding URIs.
 

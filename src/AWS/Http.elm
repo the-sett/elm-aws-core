@@ -1,40 +1,46 @@
-module AWS.Core.Http exposing
-    ( Request, request, requestWithJsonDecoder, addHeaders, addQuery
-    , setResponseParser, send, sendUnsigned, Method(..), Path
-    , Body, MimeType, emptyBody, stringBody, jsonBody
+module AWS.Http exposing
+    ( send, sendUnsigned
+    , Method(..), Path, Request
+    , request, requestWithJsonDecoder
+    , setResponseParser
+    , Body, MimeType
+    , emptyBody, stringBody, jsonBody
+    , addHeaders, addQuery
     )
 
-{-| AWS requests and responses.
+{-| Handling of HTTP requests to AWS Services.
 
 
-# Table of Contents
+# Tasks for sending requests to AWS.
 
-  - [Requests](#requests)
-  - [Body](#body)
-
-Examples assume the following imports:
-
-    import Json.Decode
+@docs send, sendUnsigned
 
 
-# Requests
+# Build a Request
 
-@docs Request, request, requestWithJsonDecoder, addHeaders, addQuery
-@docs setResponseParser, send, sendUnsigned, Method, Path
+@docs Method, Path, Request
+@docs request, requestWithJsonDecoder
+@docs setResponseParser
 
 
-# Body
+# Build the HTTP Body of a Request
 
-@docs Body, MimeType, emptyBody, stringBody, jsonBody
+@docs Body, MimeType
+@docs emptyBody, stringBody, jsonBody
+
+
+# Add headers or query parameters to a Request
+
+@docs addHeaders, addQuery
 
 -}
 
-import AWS.Core.Body
-import AWS.Core.Credentials exposing (Credentials)
-import AWS.Core.Request exposing (Unsigned)
-import AWS.Core.Service as Service exposing (Protocol(..), Service, Signer(..))
-import AWS.Core.Signers.Unsigned as Unsigned
-import AWS.Core.Signers.V4 as V4
+import AWS.Body
+import AWS.Credentials exposing (Credentials)
+import AWS.Request exposing (Unsigned)
+import AWS.Service as Service exposing (Protocol(..), Service, Signer(..))
+import AWS.Signers.Unsigned as Unsigned
+import AWS.Signers.V4 as V4
 import Http
 import Json.Decode as Decode
 import Json.Encode
@@ -45,7 +51,7 @@ import Time exposing (Posix)
 {-| Holds an unsigned AWS HTTP request.
 -}
 type alias Request a =
-    AWS.Core.Request.Unsigned a
+    AWS.Request.Unsigned a
 
 
 {-| HTTP request methods.
@@ -90,7 +96,7 @@ type alias Path =
 {-| Holds a request body.
 -}
 type alias Body =
-    AWS.Core.Body.Body
+    AWS.Body.Body
 
 
 {-| MIME type.
@@ -106,7 +112,7 @@ type alias MimeType =
 -}
 emptyBody : Body
 emptyBody =
-    AWS.Core.Body.empty
+    AWS.Body.empty
 
 
 {-| Create a body containing a JSON value.
@@ -116,7 +122,7 @@ This will automatically add the `Content-Type: application/json` header.
 -}
 jsonBody : Json.Encode.Value -> Body
 jsonBody =
-    AWS.Core.Body.json
+    AWS.Body.json
 
 
 {-| Create a body with a custom MIME type and the given string as content.
@@ -126,7 +132,7 @@ jsonBody =
 -}
 stringBody : MimeType -> String -> Body
 stringBody =
-    AWS.Core.Body.string
+    AWS.Body.string
 
 
 {-| Create an AWS HTTP unsigned request.
@@ -144,7 +150,7 @@ request :
     -> (String -> Result String a)
     -> Request a
 request name method path body decoder =
-    AWS.Core.Request.unsigned name (methodToString method) path body decoder
+    AWS.Request.unsigned name (methodToString method) path body decoder
 
 
 {-| Create an AWS HTTP unsigned request that expects a JSON response.

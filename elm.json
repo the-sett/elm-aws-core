@@ -5,11 +5,11 @@
     "license": "Apache-2.0",
     "version": "5.0.1",
     "exposed-modules": [
-        "AWS.Core.Credentials",
-        "AWS.Core.Http",
-        "AWS.Core.Service",
-        "AWS.Core.Uri",
-        "AWS.Core.KVEncode"
+        "AWS.Credentials",
+        "AWS.Http",
+        "AWS.Service",
+        "AWS.Uri",
+        "AWS.KVEncode"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

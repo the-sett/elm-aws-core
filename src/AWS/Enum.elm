@@ -1,4 +1,4 @@
-module AWS.Core.Enum exposing (toString, toFloat)
+module AWS.Enum exposing (toString, toFloat)
 
 {-| Convert AWS enums values to basic values
 

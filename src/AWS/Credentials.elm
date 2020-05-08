@@ -1,4 +1,4 @@
-module AWS.Core.Credentials exposing
+module AWS.Credentials exposing
     ( Credentials, AccessKeyId, SecretAccessKey, SessionToken
     , fromAccessKeys, setSessionToken
     , accessKeyId, secretAccessKey, sessionToken

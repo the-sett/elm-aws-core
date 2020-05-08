@@ -1,4 +1,4 @@
-module AWS.Core.Request exposing
+module AWS.Request exposing
     ( Unsigned
     , queryString
     , unsigned
@@ -8,10 +8,10 @@ module AWS.Core.Request exposing
 {-| Internal representation of a request.
 -}
 
-import AWS.Core.Body as Body exposing (Body)
-import AWS.Core.QueryString as QueryString
-import AWS.Core.Service as Service exposing (Service)
-import AWS.Core.Uri
+import AWS.Body as Body exposing (Body)
+import AWS.QueryString as QueryString
+import AWS.Service as Service exposing (Service)
+import AWS.Uri
 import Http
 import Json.Decode exposing (Decoder)
 
@@ -65,7 +65,7 @@ queryString params =
             params
                 |> List.foldl
                     (\( key, val ) qs ->
-                        qs |> QueryString.add (AWS.Core.Uri.percentEncode key) val
+                        qs |> QueryString.add (AWS.Uri.percentEncode key) val
                     )
                     QueryString.empty
                 |> QueryString.render

@@ -1,4 +1,4 @@
-module AWS.Core.Service exposing
+module AWS.Service exposing
     ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..), Endpoint(..)
     , signerEnum, protocolEnum, timestampFormatEnum
     , defineGlobal, defineRegional
@@ -40,7 +40,7 @@ Use either one of these to create a service definition.
 
 # Attributes
 
-These functions are exposed so that [AWS.Core.Http](AWS-Core-Http) can properly
+These functions are exposed so that [AWS.Http](AWS-Core-Http) can properly
 sign requests. They can be useful for debugging, testing, and logging, but
 otherwise are not required.
 

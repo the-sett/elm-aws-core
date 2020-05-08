@@ -1,4 +1,4 @@
-module AWS.Core.Body exposing
+module AWS.Body exposing
     ( Body
     , empty
     , explicitMimetype

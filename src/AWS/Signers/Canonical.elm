@@ -1,8 +1,8 @@
-module AWS.Core.Signers.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
+module AWS.Signers.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
-import AWS.Core.Body exposing (Body)
-import AWS.Core.Service as Service exposing (Service, Signer(..))
-import AWS.Core.Uri
+import AWS.Body exposing (Body)
+import AWS.Service as Service exposing (Service, Signer(..))
+import AWS.Uri
 import Crypto.Hash exposing (sha256)
 import Regex
 
@@ -57,7 +57,7 @@ canonicalUri signer path =
                     |> Regex.replace (Regex.fromString "/{2,}" |> Maybe.withDefault Regex.never) (\_ -> "/")
                     |> resolveRelativePath
                     |> String.split "/"
-                    |> List.map AWS.Core.Uri.percentEncode
+                    |> List.map AWS.Uri.percentEncode
                     |> String.join "/"
 
 
@@ -90,7 +90,7 @@ signedHeaders headers =
 
 canonicalPayload : Body -> String
 canonicalPayload =
-    AWS.Core.Body.toString >> sha256
+    AWS.Body.toString >> sha256
 
 
 
@@ -152,4 +152,4 @@ joinHeader ( key, val ) =
 
 encode2Tuple : String -> ( String, String ) -> String
 encode2Tuple separator ( a, b ) =
-    [ AWS.Core.Uri.percentEncode a, AWS.Core.Uri.percentEncode b ] |> String.join separator
+    [ AWS.Uri.percentEncode a, AWS.Uri.percentEncode b ] |> String.join separator
