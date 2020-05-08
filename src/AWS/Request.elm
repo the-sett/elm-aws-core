@@ -21,10 +21,17 @@ type alias Unsigned a =
     , method : String
     , path : String
     , body : Body
-    , decoder : String -> Result String a
     , headers : List ( String, String )
     , query : List ( String, String )
+
+    -- when dealing with the body only.
+    , decoder : String -> Result String a
+
+    -- more generally over the whole response
     , responseParser : Maybe (Http.Response String -> Result Http.Error a)
+
+    -- need a way to get headers + response code with decoder.
+    -- headers will be a List (String, String)
     }
 
 
