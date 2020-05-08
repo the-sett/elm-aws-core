@@ -1,23 +1,17 @@
-module AWS.Core.Decode exposing (Metadata, Response, ResponseWrapper, ResultDecoder(..), dict, optional, required, responseWrapperDecoder)
+module AWS.Core.Decode exposing (Metadata, Response, ResultDecoder(..), dict, optional, required)
 
 {-| Helper functions for decoding AWS calls.
 
 
 # Helpers
 
-@docs Metadata, Response, ResponseWrapper, ResultDecoder, dict, optional, required, responseWrapperDecoder
+@docs Metadata, Response, ResultDecoder, dict, optional, required
 
 -}
 
 import Dict exposing (Dict)
 import Json.Decode as JD
 import Json.Decode.Pipeline as JDP
-
-
-{-| A wrapped response
--}
-type alias ResponseWrapper a =
-    { response : Response a }
 
 
 {-| A response consisting of data and meta-data.
@@ -39,21 +33,6 @@ type alias Metadata =
 type ResultDecoder a
     = ResultDecoder String (JD.Decoder a)
     | FixedResult a
-
-
-{-| Decodes a ResponseWrapper.
--}
-responseWrapperDecoder : String -> ResultDecoder a -> JD.Decoder (ResponseWrapper a)
-responseWrapperDecoder actionName resultDecoder =
-    JD.succeed ResponseWrapper
-        |> JDP.required (actionName ++ "Response")
-            (JD.succeed Response
-                |> resultWrapperDecoder resultDecoder
-                |> JDP.required "ResponseMetadata"
-                    (JD.succeed Metadata
-                        |> JDP.required "RequestId" JD.string
-                    )
-            )
 
 
 resultWrapperDecoder : ResultDecoder a -> JD.Decoder (a -> b) -> JD.Decoder b
