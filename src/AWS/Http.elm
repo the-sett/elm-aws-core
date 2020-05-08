@@ -52,7 +52,7 @@ import Time exposing (Posix)
 --=== Tasks for sending requests to AWS.
 
 
-{-| Signs and sends an AWS Request.
+{-| Signs and sends an AWS Request to a service.
 -}
 send :
     Service
@@ -84,7 +84,7 @@ send service credentials req =
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
 
 
-{-| Sends an AWS Request wihtout signing it.
+{-| Sends an AWS Request to a service wihtout signing it.
 -}
 sendUnsigned :
     Service
@@ -139,9 +139,7 @@ type alias Path =
 
 {-| Create an AWS HTTP unsigned request.
 
-    request GET "/" emptyBody decodeFn
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
+    request "Function" GET emptyBody parser
 
 -}
 request :
@@ -157,9 +155,7 @@ request name method path body decoder =
 
 {-| Create an AWS HTTP unsigned request that expects a JSON response.
 
-    request GET "/" emptyBody Json.Decode.value
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [], responseParser = Nothing }"
+    request "Function" GET emptyBody decodeFn
 
 -}
 requestWithJsonDecoder :
@@ -238,16 +234,7 @@ stringBody =
 
 {-| Appends headers to an AWS HTTP unsigned request.
 
-    request GET "/" emptyBody Json.Decode.value
-        |> addHeaders
-            [ ( "x-custom-1", "value 1" )
-            , ( "x-Custom-2", "value 2" )
-            ]
-        |> addHeaders
-            [ ( "x-custom-3", "value 3" )
-            ]
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [(\"x-custom-1\",\"value 1\"),(\"x-Custom-2\",\"value 2\"),(\"x-custom-3\",\"value 3\")], query = [], responseParser = Nothing }"
+See the `AWS.KVEncode` for encoder functions to build the headers with.
 
 -}
 addHeaders : List ( String, String ) -> Request a -> Request a
@@ -257,16 +244,7 @@ addHeaders headers req =
 
 {-| Appends query arguments to an AWS HTTP unsigned request.
 
-    request GET "/" emptyBody Json.Decode.value
-        |> addQuery
-            [ ( "key1", "value 1" )
-            , ( "Key2", "value 2" )
-            ]
-        |> addQuery
-            [ ( "key3", "value 3" )
-            ]
-        |> toString
-    --> "{ method = \"GET\", path = \"/\", body = Empty, decoder = <decoder>, headers = [], query = [(\"key1\",\"value 1\"),(\"Key2\",\"value 2\"),(\"key3\",\"value 3\")], responseParser = Nothing }"
+See the `AWS.KVEncode` for encoder functions to build the query parameters with.
 
 -}
 addQuery : List ( String, String ) -> Request a -> Request a
