@@ -11,7 +11,7 @@ and poorly designed.
 A new `KVEncode` module has been introduced to help with building headers and
 query parameters.
 
-AWS URI encoding was taken from the old `Encode` module and put in the `HTTP`
+AWS URI encoding was taken from the old `Encode` module and put in its own `Uri`
 module.
 
 # elm-aws-core
@@ -40,48 +40,3 @@ this package as a foundational element.
   - [AWS.KVEncode](AWS-KVEncode): Utility for helping to encode Elm data into
   key-valued string pairs, for setting query parameters or header fields.
   - [AWS.Uri](AWS-Uri): Utility for URI encoding specific to how AWS does it.
-
-
-## Usage example
-
-    import AWS.Credentials as Credentials
-    import AWS.Http as Http exposing (Method(..))
-    import AWS.Service as Service
-    import Json.Decode
-    import Task
-
-    let
-        creds =
-            Credentials.fromAccessKeys
-                "ACCESS KEY ID"
-                "SECRET ACCESS KEY"
-        service =
-            Service.defineGlobal
-                "sts"
-                "2011-06-15"
-                Service.query
-                Service.signV4
-                (Service.setXmlNamespace "https://sts.amazonaws.com/doc/2011-06-15/")
-        handler =
-            \result ->
-                case result of
-                    Ok someValue ->
-                        -- someValue is what you get from the decoder
-                        -- that is provided to the request call below.
-                        -- In this case, it would be an Int because
-                        -- we are using Json.Decode.int as the decoder.
-                        someValue /= -1
-                    Err err ->
-                        -- err is an Http.Error
-                        -- See: http://package.elm-lang.org/packages/elm-lang/http/latest/Http#Error
-                        False
-    in
-    Http.request
-        GET
-        "/some/path"
-        Http.emptyBody
-        Json.Decode.int
-        |> Http.send service creds
-        |> Task.attempt handler
-        |> (/=) Cmd.none
-    --> True
