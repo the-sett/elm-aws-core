@@ -6,9 +6,9 @@ module AWS.Core.Request exposing
     )
 
 import AWS.Core.Body as Body exposing (Body)
-import AWS.Core.Encode
 import AWS.Core.QueryString as QueryString
 import AWS.Core.Service as Service exposing (Service)
+import AWS.Core.Uri
 import Http
 import Json.Decode exposing (Decoder)
 
@@ -62,7 +62,7 @@ queryString params =
             params
                 |> List.foldl
                     (\( key, val ) qs ->
-                        qs |> QueryString.add (AWS.Core.Encode.uri key) val
+                        qs |> QueryString.add (AWS.Core.Uri.percentEncode key) val
                     )
                     QueryString.empty
                 |> QueryString.render
