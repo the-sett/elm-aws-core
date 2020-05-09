@@ -1,5 +1,5 @@
 module AWS.Service exposing
-    ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..), Endpoint(..)
+    ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
     , signerEnum, protocolEnum, timestampFormatEnum
     , defineGlobal, defineRegional
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
@@ -11,7 +11,7 @@ module AWS.Service exposing
 
 # Types
 
-@docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat, Endpoint
+@docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat
 @docs signerEnum, protocolEnum, timestampFormatEnum
 
 
@@ -80,9 +80,8 @@ define :
     -> ApiVersion
     -> Protocol
     -> Signer
-    -> (Service -> Service)
     -> Service
-define prefix apiVersion proto signerType extra =
+define prefix apiVersion proto signerType =
     Service
         { endpointPrefix = prefix
         , protocol = proto
@@ -97,7 +96,6 @@ define prefix apiVersion proto signerType extra =
         , hostResolver = defaultHostResolver
         , regionResolver = defaultRegionResolver
         }
-        |> extra
 
 
 {-| Creates a global service definition.
@@ -107,7 +105,6 @@ defineGlobal :
     -> ApiVersion
     -> Protocol
     -> Signer
-    -> (Service -> Service)
     -> Service
 defineGlobal =
     define
@@ -120,12 +117,11 @@ defineRegional :
     -> ApiVersion
     -> Protocol
     -> Signer
-    -> (Service -> Service)
     -> Region
     -> Service
-defineRegional prefix apiVersion proto signerType extra rgn =
+defineRegional prefix apiVersion proto signerType rgn =
     case
-        define prefix apiVersion proto signerType extra
+        define prefix apiVersion proto signerType
     of
         Service s ->
             Service { s | endpoint = RegionalEndpoint rgn }
