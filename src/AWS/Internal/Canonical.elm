@@ -1,4 +1,4 @@
-module AWS.Internal.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
+module AWS.Internal.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalUrlBuilder, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
 import AWS.Internal.Body exposing (Body)
 import AWS.Service as Service exposing (Service, Signer(..))
@@ -21,7 +21,7 @@ canonicalRaw : Signer -> String -> String -> List ( String, String ) -> List ( S
 canonicalRaw signer method path headers params body =
     [ String.toUpper method
     , canonicalUri signer path
-    , canonicalQueryString params
+    , canonicalUrlBuilder params
     , canonicalHeaders headers
     , ""
     , signedHeaders headers
@@ -61,8 +61,8 @@ canonicalUri signer path =
                     |> String.join "/"
 
 
-canonicalQueryString : List ( String, String ) -> String
-canonicalQueryString params =
+canonicalUrlBuilder : List ( String, String ) -> String
+canonicalUrlBuilder params =
     params
         |> List.sort
         |> List.map (encode2Tuple "=")

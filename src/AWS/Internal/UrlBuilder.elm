@@ -1,4 +1,4 @@
-module AWS.Internal.QueryString exposing (url)
+module AWS.Internal.UrlBuilder exposing (url)
 
 import AWS.Internal.Request exposing (Unsigned)
 import AWS.Service as Service exposing (Service)
@@ -34,21 +34,12 @@ queryString params =
                     (\( key, val ) qs ->
                         qs |> add (AWS.Uri.percentEncode key) val
                     )
-                    empty
+                    Dict.empty
                 |> render
 
 
-type QueryString
-    = QueryString (Dict String (List String))
-
-
-empty : QueryString
-empty =
-    QueryString Dict.empty
-
-
-render : QueryString -> String
-render (QueryString qs) =
+render : Dict String (List String) -> String
+render qs =
     let
         flatten ( k, xs ) =
             List.map (\x -> k ++ "=" ++ Url.percentEncode x) xs
@@ -59,8 +50,8 @@ render (QueryString qs) =
         |> (++) "?"
 
 
-add : String -> String -> QueryString -> QueryString
-add k v (QueryString qs) =
+add : String -> String -> Dict String (List String) -> Dict String (List String)
+add k v qs =
     let
         prepend maybeXs =
             case maybeXs of
@@ -71,4 +62,3 @@ add k v (QueryString qs) =
                     Just (v :: xs)
     in
     Dict.update k prepend qs
-        |> QueryString

@@ -3,7 +3,7 @@ module AWS.Internal.V4 exposing (addAuthorization, addSessionToken, algorithm, a
 import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.QueryString
+import AWS.Internal.UrlBuilder
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Service)
 import Crypto.HMAC exposing (sha256)
@@ -56,7 +56,7 @@ sign service creds date req =
                 |> addAuthorization service creds date req
                 |> addSessionToken creds
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Internal.QueryString.url service req
+        , url = AWS.Internal.UrlBuilder.url service req
         , body = AWS.Internal.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing
