@@ -1,60 +1,52 @@
-module AWS.Internal.QueryString exposing
-    ( QueryString
-    , empty
-    , render, add
-    )
+module AWS.Internal.QueryString exposing (url)
 
-{-| This module exposes functions for working with query strings.
-You can manipulate `QueryString`s:
-
-> empty
-> | |> add "a" "hello"
-> | |> add "a" "goodbye"
-> | |> add "b" "1"
-> | |> render
-> "?a=hello&a=goodbye&b=1" : String
-
-
-## Types
-
-@docs QueryString
-
-
-## Constructing QueryStrings
-
-@docs empty
-
-
-## Manipulating parameters
-
-@docs render, add
-
--}
-
+import AWS.Internal.Request exposing (Unsigned)
+import AWS.Service as Service exposing (Service)
+import AWS.Uri
 import Dict exposing (Dict)
 import String
 import Url
 
 
-{-| Represents a parsed query string.
+{-| Builds the URL for invoking a `Service` with a request.
+
+This consists of combing together the host name, path and query string to form
+the complete URL.
+
 -}
+url : Service -> Unsigned a -> String
+url service { path, query } =
+    "https://"
+        ++ Service.host service
+        ++ path
+        ++ queryString query
+
+
+queryString : List ( String, String ) -> String
+queryString params =
+    case params of
+        [] ->
+            ""
+
+        _ ->
+            params
+                |> List.foldl
+                    (\( key, val ) qs ->
+                        qs |> add (AWS.Uri.percentEncode key) val
+                    )
+                    empty
+                |> render
+
+
 type QueryString
     = QueryString (Dict String (List String))
 
 
-{-| Construct an empty QueryString.
--}
 empty : QueryString
 empty =
     QueryString Dict.empty
 
 
-{-| Render a QueryString to a String.
-
-> render (parse "?a=1&b=a&a=c")
-> "?a=1&a=c&b=a" : String
-
--}
 render : QueryString -> String
 render (QueryString qs) =
     let
@@ -67,18 +59,6 @@ render (QueryString qs) =
         |> (++) "?"
 
 
-{-| Add a value to a key.
-
-> parse "?a=1&b=a&a=c"
-> | |> add "a" "2"
-> | |> render
-> "?a=2&a=1&a=c&b=a" : String
-> parse "?a=1&b=a&a=c"
-> | |> add "d" "hello"
-> | |> render
-> "?a=1&a=c&b=a&d=hello" : String
-
--}
 add : String -> String -> QueryString -> QueryString
 add k v (QueryString qs) =
     let

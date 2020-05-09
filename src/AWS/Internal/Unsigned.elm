@@ -2,6 +2,7 @@ module AWS.Internal.Unsigned exposing (filterHeaders, formatPosix, headers, prep
 
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Internal.QueryString
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Service)
 import Http
@@ -46,7 +47,7 @@ prepare service date req =
         , headers =
             headers service date req.body req.headers
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Internal.Request.url service req
+        , url = AWS.Internal.QueryString.url service req
         , body = AWS.Internal.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing

@@ -1,20 +1,15 @@
 module AWS.Internal.Request exposing
     ( HttpStatus(..)
     , ResponseDecoder
-    ,  Unsigned
-       --, queryString
-
+    , Unsigned
     , unsigned
-    , url
     )
 
 {-| Internal representation of a request.
 -}
 
 import AWS.Internal.Body as Body exposing (Body)
-import AWS.Internal.QueryString as QueryString
 import AWS.Service as Service exposing (Service)
-import AWS.Uri
 import Http exposing (Error, Metadata, Response)
 import Json.Decode exposing (Decoder)
 
@@ -80,27 +75,3 @@ unsigned name method uri body decoder =
     , query = []
     , decoder = decoder
     }
-
-
-url : Service -> Unsigned a -> String
-url service { path, query } =
-    "https://"
-        ++ Service.host service
-        ++ path
-        ++ queryString query
-
-
-queryString : List ( String, String ) -> String
-queryString params =
-    case params of
-        [] ->
-            ""
-
-        _ ->
-            params
-                |> List.foldl
-                    (\( key, val ) qs ->
-                        qs |> QueryString.add (AWS.Uri.percentEncode key) val
-                    )
-                    QueryString.empty
-                |> QueryString.render
