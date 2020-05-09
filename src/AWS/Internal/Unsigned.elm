@@ -78,7 +78,7 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Content-Type", Service.jsonContentType service ) ]
+            [ ( "Content-Type", Service.contentType service ) ]
         ]
 
 

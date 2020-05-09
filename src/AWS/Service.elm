@@ -1,39 +1,33 @@
 module AWS.Service exposing
-    ( Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
-    , signerEnum, protocolEnum, timestampFormatEnum
-    , defineGlobal, defineRegional
+    ( defineGlobal, defineRegional
+    , Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-    , endpointPrefix, region, host, protocol, signer, targetPrefix, jsonContentType, acceptType
+    , endpointPrefix, region, host, protocol, signer, targetPrefix, contentType, acceptType
+    , signerEnum, protocolEnum, timestampFormatEnum
     )
 
 {-| AWS service configuration.
 
 
-# Types
-
-@docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat
-@docs signerEnum, protocolEnum, timestampFormatEnum
-
-
-# Constructors
-
-Use either one of these to create a service definition.
+# Define a Service.
 
 @docs defineGlobal, defineRegional
+@docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat
 
 
-# Property Setters
+# Optional properties that can be added to a Service.
 
 @docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
 
 
-# Attributes
+# Extract the properties of a Service.
 
-These functions are exposed so that [AWS.Http](AWS-Core-Http) can properly
-sign requests. They can be useful for debugging, testing, and logging, but
-otherwise are not required.
+@docs endpointPrefix, region, host, protocol, signer, targetPrefix, contentType, acceptType
 
-@docs endpointPrefix, region, host, protocol, signer, targetPrefix, jsonContentType, acceptType
+
+# Enumerations of enumerable service properties, for convenience.
+
+@docs signerEnum, protocolEnum, timestampFormatEnum
 
 -}
 
@@ -241,10 +235,10 @@ protocol (Service spec) =
     spec.protocol
 
 
-{-| Gets the service JSON content type header value.
+{-| Gets the service content type header value.
 -}
-jsonContentType : Service -> String
-jsonContentType (Service spec) =
+contentType : Service -> String
+contentType (Service spec) =
     (case spec.protocol of
         REST_XML ->
             "application/xml"
