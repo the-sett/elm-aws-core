@@ -1,5 +1,7 @@
 module AWS.Request exposing
-    ( Unsigned
+    ( HttpStatus
+    , ResponseDecoder
+    , Unsigned
     , queryString
     , unsigned
     , url
@@ -12,8 +14,42 @@ import AWS.Body as Body exposing (Body)
 import AWS.QueryString as QueryString
 import AWS.Service as Service exposing (Service)
 import AWS.Uri
-import Http
+import Http exposing (Error, Metadata, Response)
 import Json.Decode exposing (Decoder)
+
+
+
+-- Types from Http module for reference.
+--
+-- type Response body
+--     = BadUrl_ String --> Map to BadUrl
+--     | Timeout_ --> Map to Timeout
+--     | NetworkError_ --> Map to NetworkError
+--     | BadStatus_ Metadata body
+--     | GoodStatus_ Metadata body
+--
+-- type alias Metadata =
+--     { url : String
+--     , statusCode : Int
+--     , statusText : String
+--     , headers : Dict String String
+--     }
+--
+-- type Error
+--     = BadUrl String
+--     | Timeout
+--     | NetworkError
+--     | BadStatus Int
+--     | BadBody String
+
+
+type alias ResponseDecoder a =
+    HttpStatus -> Metadata -> String -> Result Http.Error a
+
+
+type HttpStatus
+    = GoodStatus
+    | BadStatus
 
 
 type alias Unsigned a =
@@ -23,15 +59,7 @@ type alias Unsigned a =
     , body : Body
     , headers : List ( String, String )
     , query : List ( String, String )
-
-    -- when dealing with the body only.
-    , decoder : String -> Result String a
-
-    -- more generally over the whole response
-    , responseParser : Maybe (Http.Response String -> Result Http.Error a)
-
-    -- need a way to get headers + response code with decoder.
-    -- headers will be a List (String, String)
+    , decoder : ResponseDecoder a
     }
 
 
@@ -40,7 +68,7 @@ unsigned :
     -> String
     -> String
     -> Body
-    -> (String -> Result String a)
+    -> ResponseDecoder a
     -> Unsigned a
 unsigned name method uri body decoder =
     { name = name
@@ -50,7 +78,6 @@ unsigned name method uri body decoder =
     , headers = []
     , query = []
     , decoder = decoder
-    , responseParser = Nothing
     }
 
 

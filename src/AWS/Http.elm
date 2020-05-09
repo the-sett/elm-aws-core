@@ -1,11 +1,11 @@
 module AWS.Http exposing
     ( send, sendUnsigned
     , Method(..), Path, Request
-    , request, requestWithJsonDecoder
-    , setResponseParser
+    , request
     , Body, MimeType
     , emptyBody, stringBody, jsonBody
     , addHeaders, addQuery
+    , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder
     )
 
 {-| Handling of HTTP requests to AWS Services.
@@ -19,11 +19,10 @@ module AWS.Http exposing
 # Build a Request
 
 @docs Method, Path, Request
-@docs request, requestWithJsonDecoder
-@docs setResponseParser
+@docs request
 
 
-# Build th HTTP Body of a Request
+# Build the HTTP Body of a Request
 
 @docs Body, MimeType
 @docs emptyBody, stringBody, jsonBody
@@ -33,13 +32,18 @@ module AWS.Http exposing
 
 @docs addHeaders, addQuery
 
+
+# Build decoders to interpret the response.
+
+@docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder
+
 -}
 
 import AWS.Body
 import AWS.Credentials exposing (Credentials)
 import AWS.Request exposing (Unsigned)
 import AWS.Service as Service exposing (Protocol(..), Service, Signer(..))
-import AWS.Signers.Unsigned as Unsigned
+import AWS.Signers.Unsigned as Unsigned exposing (HttpStatus, ResponseDecoder, Usigned)
 import AWS.Signers.V4 as V4
 import Http
 import Json.Decode as Decode
@@ -147,39 +151,10 @@ request :
     -> Method
     -> Path
     -> Body
-    -> (String -> Result String a)
+    -> ResponseDecoder a
     -> Request a
 request name method path body decoder =
     AWS.Request.unsigned name (methodToString method) path body decoder
-
-
-{-| Create an AWS HTTP unsigned request that expects a JSON response.
-
-    request "Function" GET emptyBody decodeFn
-
--}
-requestWithJsonDecoder :
-    String
-    -> Method
-    -> Path
-    -> Body
-    -> Decode.Decoder a
-    -> Request a
-requestWithJsonDecoder name method path body decoder =
-    request name
-        method
-        path
-        body
-        (Decode.decodeString decoder
-            >> Result.mapError Decode.errorToString
-        )
-
-
-{-| Set a parser for the entire Http.Response. Overrides the request decoder.
--}
-setResponseParser : (Http.Response String -> Result Http.Error a) -> Request a -> Request a
-setResponseParser parser req =
-    { req | responseParser = Just parser }
 
 
 
@@ -250,6 +225,124 @@ See the `AWS.KVEncode` for encoder functions to build the query parameters with.
 addQuery : List ( String, String ) -> Request a -> Request a
 addQuery query req =
     { req | query = List.append req.query query }
+
+
+
+--=== Build decoders to interpret the response.
+
+
+{-| A full decoder for the response that can look at the status code, metadata
+including headers and so on. The body is presented as a `String` for parsing.
+
+It is possible to report an error as a String when interpreting the response, and
+this will be mapped onto `Http.BadBody` when present.
+
+-}
+fullDecoder : (HttpStatus -> Metadata -> String -> Result String a) -> ResponseDecoder a
+fullDecoder decodeFn =
+    \status metadata body ->
+        case decodeFn status metadata body of
+            Ok val ->
+                Ok val
+
+            Err err ->
+                Http.BadBody err |> Err
+
+
+{-| A full JSON decoder for the response that can look at the status code, metadata
+including headers and so on. The body is presented as a JSON `Value` for decoding.
+
+Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
+`Decode.errorToString`.
+
+-}
+jsonFullDecoder : (HttpStatus -> Metadata -> Decoder a) -> ResponseDecoder a
+jsonFullDecoder decodeFn =
+    \status metadata body ->
+        case Decode.decodeString (decodeFn status metadata) body of
+            Ok val ->
+                Ok val
+
+            Err err ->
+                Http.BadBody (Decode.errorToString err) |> Err
+
+
+{-| A decoder for the response that uses only the body presented as a `String`
+for parsing.
+
+It is possible to report an error as a String when interpreting the response, and
+this will be mapped onto `Http.BadBody` when present.
+
+Note that this decoder is only used when the response is Http.GoodStatus\_. An
+Http.BadStatus\_ is always mapped to Http.BadStatus without attempting to decode
+the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
+one of the 'full' decoders.
+
+-}
+stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
+stringBodyDecoder decodeFn =
+    \status _ body ->
+        case status of
+            GoodStatus ->
+                case decodeFn body of
+                    Ok val ->
+                        Ok val
+
+                    Err err ->
+                        Http.BadBody err |> Err
+
+            BadStatus ->
+                Http.BadStatus
+
+
+{-| A decoder for the response that uses only the body presented as a JSON `Value`
+for decoding.
+
+Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
+`Decode.errorToString`.
+
+Note that this decoder is only used when the response is Http.GoodStatus\_. An
+Http.BadStatus\_ is always mapped to Http.BadStatus without attempting to decode
+the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
+one of the 'full' decoders.
+
+-}
+jsonBodyDecoder : Decoder a -> ResponseDecoder a
+jsonBodyDecoder decodeFn =
+    \status _ body ->
+        case status of
+            GoodStatus ->
+                case Decode.decodeString decodeFn body of
+                    Ok val ->
+                        Ok val
+
+                    Err err ->
+                        Http.BadBody (Decode.errorToString err) |> Err
+
+            BadStatus ->
+                Http.BadStatus
+
+
+{-| Not all AWS service produce a response that contains useful information.
+
+The `constantDecoder` is helpful in those situations and just produces whatever
+value you give it once AWS has responded.
+
+Note that this decoder is only used when the response is Http.GoodStatus\_. An
+Http.BadStatus\_ is always mapped to Http.BadStatus without attempting to decode
+the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
+one of the 'full' decoders.
+
+-}
+constantDecoder : a -> ResponseDecoder a
+constantDecoder val =
+    \status _ _ ->
+        case status of
+            GoodStatus ->
+                Ok val
+
+            BadStatus ->
+                Http.BadStatus
 
 
 methodToString : Method -> String
