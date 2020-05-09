@@ -112,8 +112,7 @@ addSessionToken :
     -> List ( String, String )
     -> List ( String, String )
 addSessionToken creds headersList =
-    creds
-        |> Credentials.sessionToken
+    creds.sessionToken
         |> Maybe.map
             (\token ->
                 ( "x-amz-security-token", token ) :: headersList
@@ -174,7 +173,7 @@ authorization creds date service req rawHeaders =
             credentialScope date creds service
     in
     [ "AWS4-HMAC-SHA256 Credential="
-        ++ Credentials.accessKeyId creds
+        ++ creds.accessKeyId
         ++ "/"
         ++ scope
     , "SignedHeaders="
@@ -204,8 +203,7 @@ signature creds service date toSign =
                     key
                     (Bytes.fromUTF8 message)
     in
-    creds
-        |> Credentials.secretAccessKey
+    creds.secretAccessKey
         |> (++) "AWS4"
         |> Bytes.fromUTF8
         |> digest (formatPosix date |> String.slice 0 8)

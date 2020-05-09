@@ -1,25 +1,15 @@
 module AWS.Credentials exposing
     ( Credentials, AccessKeyId, SecretAccessKey, SessionToken
     , fromAccessKeys, setSessionToken
-    , accessKeyId, secretAccessKey, sessionToken
     )
 
 {-| AWS credentials.
 
-
-# Types
+A set of AWS credentials consists of an acces key id, a secret access key and
+an optional session token.
 
 @docs Credentials, AccessKeyId, SecretAccessKey, SessionToken
-
-
-# Building
-
 @docs fromAccessKeys, setSessionToken
-
-
-# Accessing
-
-@docs accessKeyId, secretAccessKey, sessionToken
 
 -}
 
@@ -28,12 +18,11 @@ module AWS.Credentials exposing
 
 {-| Holds AWS credentials.
 -}
-type Credentials
-    = Credentials
-        { accessKeyId : String
-        , secretAccessKey : String
-        , sessionToken : Maybe String
-        }
+type alias Credentials =
+    { accessKeyId : String
+    , secretAccessKey : String
+    , sessionToken : Maybe String
+    }
 
 
 {-| The AWS access key ID.
@@ -58,36 +47,14 @@ type alias SessionToken =
 -}
 fromAccessKeys : AccessKeyId -> SecretAccessKey -> Credentials
 fromAccessKeys keyId secretKey =
-    Credentials
-        { accessKeyId = keyId
-        , secretAccessKey = secretKey
-        , sessionToken = Nothing
-        }
+    { accessKeyId = keyId
+    , secretAccessKey = secretKey
+    , sessionToken = Nothing
+    }
 
 
 {-| Set the session token.
 -}
 setSessionToken : SessionToken -> Credentials -> Credentials
-setSessionToken token (Credentials creds) =
-    Credentials { creds | sessionToken = Just token }
-
-
-{-| Gets the access key.
--}
-accessKeyId : Credentials -> AccessKeyId
-accessKeyId (Credentials creds) =
-    creds.accessKeyId
-
-
-{-| Gets the secret.
--}
-secretAccessKey : Credentials -> SecretAccessKey
-secretAccessKey (Credentials creds) =
-    creds.secretAccessKey
-
-
-{-| Gets the session token.
--}
-sessionToken : Credentials -> Maybe SessionToken
-sessionToken (Credentials creds) =
-    creds.sessionToken
+setSessionToken token creds =
+    { creds | sessionToken = Just token }
