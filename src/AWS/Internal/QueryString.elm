@@ -1,4 +1,4 @@
-module AWS.QueryString exposing
+module AWS.Internal.QueryString exposing
     ( QueryString
     , empty
     , render, add

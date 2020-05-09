@@ -1,8 +1,9 @@
 module AWS.Internal.Request exposing
     ( HttpStatus(..)
     , ResponseDecoder
-    , Unsigned
-    , queryString
+    ,  Unsigned
+       --, queryString
+
     , unsigned
     , url
     )
@@ -11,7 +12,7 @@ module AWS.Internal.Request exposing
 -}
 
 import AWS.Internal.Body as Body exposing (Body)
-import AWS.QueryString as QueryString
+import AWS.Internal.QueryString as QueryString
 import AWS.Service as Service exposing (Service)
 import AWS.Uri
 import Http exposing (Error, Metadata, Response)
