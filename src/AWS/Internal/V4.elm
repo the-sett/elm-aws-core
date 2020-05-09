@@ -1,10 +1,16 @@
 module AWS.Internal.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
 
+{-| V4 request signing implementation.
+
+<http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html>
+
+-}
+
 import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.UrlBuilder
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.UrlBuilder
 import AWS.Service as Service exposing (Service)
 import Crypto.HMAC exposing (sha256)
 import Http
@@ -17,10 +23,8 @@ import Word.Bytes as Bytes
 import Word.Hex as Hex
 
 
-
--- http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html
-
-
+{-| Prepares a request and signs it with the V4 signing scheme.
+-}
 sign :
     Service
     -> Credentials

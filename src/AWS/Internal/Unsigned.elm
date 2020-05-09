@@ -1,9 +1,12 @@
 module AWS.Internal.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
 
+{-| Unsigned request implementation.
+-}
+
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.UrlBuilder
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.UrlBuilder
 import AWS.Service as Service exposing (Service)
 import Http
 import Iso8601
