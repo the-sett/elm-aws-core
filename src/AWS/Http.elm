@@ -39,12 +39,12 @@ module AWS.Http exposing
 
 -}
 
-import AWS.Body
+import AWS.Internal.Body
 import AWS.Credentials exposing (Credentials)
-import AWS.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Protocol(..), Service, Signer(..))
-import AWS.Signers.Unsigned as Unsigned
-import AWS.Signers.V4 as V4
+import AWS.Internal.Unsigned as Unsigned
+import AWS.Internal.V4 as V4
 import Http exposing (Metadata)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode
@@ -121,7 +121,7 @@ sendUnsigned service req =
 {-| Holds an unsigned AWS HTTP request.
 -}
 type alias Request a =
-    AWS.Request.Unsigned a
+    AWS.Internal.Request.Unsigned a
 
 
 {-| HTTP request methods.
@@ -151,7 +151,7 @@ request :
     -> ResponseDecoder a
     -> Request a
 request name method path body decoder =
-    AWS.Request.unsigned name (methodToString method) path body decoder
+    AWS.Internal.Request.unsigned name (methodToString method) path body decoder
 
 
 
@@ -161,7 +161,7 @@ request name method path body decoder =
 {-| Holds a request body.
 -}
 type alias Body =
-    AWS.Body.Body
+    AWS.Internal.Body.Body
 
 
 {-| MIME type.
@@ -177,7 +177,7 @@ type alias MimeType =
 -}
 emptyBody : Body
 emptyBody =
-    AWS.Body.empty
+    AWS.Internal.Body.empty
 
 
 {-| Create a body containing a JSON value.
@@ -187,7 +187,7 @@ This will automatically add the `Content-Type: application/json` header.
 -}
 jsonBody : Json.Encode.Value -> Body
 jsonBody =
-    AWS.Body.json
+    AWS.Internal.Body.json
 
 
 {-| Create a body with a custom MIME type and the given string as content.
@@ -197,7 +197,7 @@ jsonBody =
 -}
 stringBody : MimeType -> String -> Body
 stringBody =
-    AWS.Body.string
+    AWS.Internal.Body.string
 
 
 

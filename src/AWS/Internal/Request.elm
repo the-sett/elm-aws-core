@@ -1,4 +1,4 @@
-module AWS.Request exposing
+module AWS.Internal.Request exposing
     ( HttpStatus(..)
     , ResponseDecoder
     , Unsigned
@@ -10,7 +10,7 @@ module AWS.Request exposing
 {-| Internal representation of a request.
 -}
 
-import AWS.Body as Body exposing (Body)
+import AWS.Internal.Body as Body exposing (Body)
 import AWS.QueryString as QueryString
 import AWS.Service as Service exposing (Service)
 import AWS.Uri

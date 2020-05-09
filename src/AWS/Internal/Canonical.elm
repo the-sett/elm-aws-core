@@ -1,6 +1,6 @@
-module AWS.Signers.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
+module AWS.Internal.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
-import AWS.Body exposing (Body)
+import AWS.Internal.Body exposing (Body)
 import AWS.Service as Service exposing (Service, Signer(..))
 import AWS.Uri
 import Crypto.Hash exposing (sha256)
@@ -90,7 +90,7 @@ signedHeaders headers =
 
 canonicalPayload : Body -> String
 canonicalPayload =
-    AWS.Body.toString >> sha256
+    AWS.Internal.Body.toString >> sha256
 
 
 

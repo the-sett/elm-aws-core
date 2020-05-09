@@ -1,10 +1,10 @@
-module AWS.Signers.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
+module AWS.Internal.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
 
-import AWS.Body exposing (Body, explicitMimetype)
+import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Credentials as Credentials exposing (Credentials)
-import AWS.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Service)
-import AWS.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
 import Http
 import Iso8601
@@ -55,8 +55,8 @@ sign service creds date req =
                 |> addAuthorization service creds date req
                 |> addSessionToken creds
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Request.url service req
-        , body = AWS.Body.toHttp req.body
+        , url = AWS.Internal.Request.url service req
+        , body = AWS.Internal.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing
         }
