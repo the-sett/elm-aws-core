@@ -43,15 +43,15 @@ unsigned :
     -> (String -> Result String a)
     -> Unsigned a
 unsigned name method uri body decoder =
-    Unsigned
-        name
-        method
-        uri
-        body
-        decoder
-        []
-        []
-        Nothing
+    { name = name
+    , method = method
+    , path = uri
+    , body = body
+    , headers = []
+    , query = []
+    , decoder = decoder
+    , responseParser = Nothing
+    }
 
 
 url : Service -> Unsigned a -> String
