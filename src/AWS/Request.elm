@@ -40,7 +40,7 @@ import Json.Decode exposing (Decoder)
 --     | Timeout
 --     | NetworkError
 --     | BadStatus Int
---     | BadBody String
+--     | BadBody String -- Overloaded. Should introduce custom error type?
 
 
 type alias ResponseDecoder a =
