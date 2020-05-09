@@ -5,7 +5,7 @@ module AWS.Http exposing
     , Body, MimeType
     , emptyBody, stringBody, jsonBody
     , addHeaders, addQuery
-    , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder
+    , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
     )
 
 {-| Handling of HTTP requests to AWS Services.
@@ -35,7 +35,7 @@ module AWS.Http exposing
 
 # Build decoders to interpret the response.
 
-@docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder
+@docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
 
 -}
 
@@ -56,7 +56,7 @@ import Time exposing (Posix)
 --=== Tasks for sending requests to AWS.
 
 
-{-| Signs and sends an AWS Request to a service.
+{-| Signs and sends a `Request` to a `Service`.
 -}
 send :
     Service
@@ -88,7 +88,7 @@ send service credentials req =
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
 
 
-{-| Sends an AWS Request to a service wihtout signing it.
+{-| Sends a `Request` without signing it.
 -}
 sendUnsigned :
     Service
@@ -141,10 +141,7 @@ type alias Path =
     String
 
 
-{-| Create an AWS HTTP unsigned request.
-
-    request "Function" GET emptyBody parser
-
+{-| Creates an unsigned HTTP request to an AWS service.
 -}
 request :
     String
