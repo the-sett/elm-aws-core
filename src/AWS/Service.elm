@@ -9,17 +9,6 @@ module AWS.Service exposing
 {-| AWS service configuration.
 
 
-# Table of Contents
-
-  - [Types](#types)
-  - [Constructors](#constructors)
-  - [Property Setters](#property-setters)
-  - [Protocols](#protocols)
-  - [Signatures](#signatures)
-  - [Timestamp Formats](#timestamp-formats)
-  - [Attributes](#attributes)
-
-
 # Types
 
 @docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat, Endpoint
@@ -112,20 +101,6 @@ define prefix apiVersion proto signerType extra =
 
 
 {-| Creates a global service definition.
-
-    let
-        service = defineGlobal "sts" "2011-06-15" query signV4
-            (setXmlNamespace "https://sts.amazonaws.com/doc/2011-06-15/")
-    in
-    ( service |> endpointPrefix
-    , service |> host
-    , service |> targetPrefix
-    )
-    --> ( "sts"
-    --> , "sts.amazonaws.com"
-    --> , "AWSSTS_20110615"
-    --> )
-
 -}
 defineGlobal :
     String
@@ -139,24 +114,6 @@ defineGlobal =
 
 
 {-| Creates a regional service definition.
-
-    let
-        acm = defineRegional "acm" "2015-12-08" json signV4
-            (setJsonVersion "1.1" >> setTargetPrefix "CertificateManager")
-        service = acm "ca-central-1"
-    in
-    ( service |> endpointPrefix
-    , service |> host
-    , service |> targetPrefix
-    )
-    --> ( "acm"
-    --> , "acm.ca-central-1.amazonaws.com"
-    --> , "CertificateManager"
-    --> )
-
-Your client library should not provide the region. Instead it should expose
-a function `Region -> Service` by leaving out the last argument.
-
 -}
 defineRegional :
     String

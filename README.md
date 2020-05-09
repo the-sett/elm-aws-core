@@ -33,8 +33,9 @@ this package as a foundational element.
 
   - [AWS.Service](AWS-Service): Build a service definition describing the
   protocol, signing scheme, base URL and so on for a service.
-  - [AWS.Http](AWS-Http): Build requests, and sign and send them. Signing and
-  sending a request requires both a `Service` and some `Credentials`.
+  - [AWS.Http](AWS-Http): Build requests, sign and send them and decode the
+  responses. Signing and sending a request requires both a `Service` and
+  some `Credentials`.
   - [AWS.Credentials](AWS-Credentials): Create AWS credentials used to sign
   requests.
   - [AWS.KVEncode](AWS-KVEncode): Utility for helping to encode Elm data into
