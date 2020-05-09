@@ -14,6 +14,12 @@ query parameters.
 AWS URI encoding was taken from the old `Encode` module and put in its own `Uri`
 module.
 
+Service and Credentials were made into type aliases instead of opaque custom types.
+This mean the accessor functions could be dropped. I don't see any reason to make
+these things opaque, there is no advantage in hiding the implementation.
+
+A lot of unused code was deleted. The API is now leaner and cleaner.
+
 # elm-aws-core
 
 This package provides the functionality needed to make HTTP requests to AWS

@@ -1,7 +1,7 @@
 module AWS.Service exposing
     ( Service
     , defineGlobal, defineRegional
-    , ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
+    , ApiVersion, Protocol(..), Signer(..), TimestampFormat(..), Region, Endpoint(..)
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace
     , toDigitalOceanSpaces
     )
@@ -13,7 +13,7 @@ module AWS.Service exposing
 
 @docs Service
 @docs defineGlobal, defineRegional
-@docs ApiVersion, Region, Protocol, Signer, TimestampFormat
+@docs ApiVersion, Protocol, Signer, TimestampFormat, Region, Endpoint
 
 
 # Optional properties that can be added to a Service.
@@ -97,15 +97,6 @@ type alias ApiVersion =
     String
 
 
-{-| An AWS region string.
-
-For example `"us-east-1"`.
-
--}
-type alias Region =
-    String
-
-
 {-| Defines the different protocols that AWS services can use.
 -}
 type Protocol
@@ -123,19 +114,28 @@ type Signer
     | SignS3
 
 
-{-| Defines an AWS service endpoint.
--}
-type Endpoint
-    = GlobalEndpoint
-    | RegionalEndpoint Region
-
-
 {-| Defines the different timestamp formats that AWS services can use.
 -}
 type TimestampFormat
     = ISO8601
     | RFC822
     | UnixTimestamp
+
+
+{-| An AWS region string.
+
+For example `"us-east-1"`.
+
+-}
+type alias Region =
+    String
+
+
+{-| Defines an AWS service endpoint.
+-}
+type Endpoint
+    = GlobalEndpoint
+    | RegionalEndpoint Region
 
 
 
