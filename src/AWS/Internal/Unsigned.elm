@@ -1,4 +1,4 @@
-module AWS.Internal.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
+module AWS.Internal.Unsigned exposing (prepare)
 
 {-| Unsigned request implementation.
 -}

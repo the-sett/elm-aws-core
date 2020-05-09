@@ -1,4 +1,4 @@
-module AWS.Internal.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
+module AWS.Internal.V4 exposing (sign)
 
 {-| V4 request signing implementation.
 
