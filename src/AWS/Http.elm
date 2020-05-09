@@ -41,12 +41,12 @@ module AWS.Http exposing
 
 import AWS.Body
 import AWS.Credentials exposing (Credentials)
-import AWS.Request exposing (Unsigned)
+import AWS.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Protocol(..), Service, Signer(..))
-import AWS.Signers.Unsigned as Unsigned exposing (HttpStatus, ResponseDecoder, Usigned)
+import AWS.Signers.Unsigned as Unsigned
 import AWS.Signers.V4 as V4
-import Http
-import Json.Decode as Decode
+import Http exposing (Metadata)
+import Json.Decode as Decode exposing (Decoder)
 import Json.Encode
 import Task exposing (Task)
 import Time exposing (Posix)
@@ -281,7 +281,7 @@ one of the 'full' decoders.
 -}
 stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
 stringBodyDecoder decodeFn =
-    \status _ body ->
+    \status metadata body ->
         case status of
             GoodStatus ->
                 case decodeFn body of
@@ -292,7 +292,7 @@ stringBodyDecoder decodeFn =
                         Http.BadBody err |> Err
 
             BadStatus ->
-                Http.BadStatus
+                Http.BadStatus metadata.statusCode |> Err
 
 
 {-| A decoder for the response that uses only the body presented as a JSON `Value`
@@ -309,7 +309,7 @@ one of the 'full' decoders.
 -}
 jsonBodyDecoder : Decoder a -> ResponseDecoder a
 jsonBodyDecoder decodeFn =
-    \status _ body ->
+    \status metadata body ->
         case status of
             GoodStatus ->
                 case Decode.decodeString decodeFn body of
@@ -320,7 +320,7 @@ jsonBodyDecoder decodeFn =
                         Http.BadBody (Decode.errorToString err) |> Err
 
             BadStatus ->
-                Http.BadStatus
+                Http.BadStatus metadata.statusCode |> Err
 
 
 {-| Not all AWS service produce a response that contains useful information.
@@ -336,13 +336,13 @@ one of the 'full' decoders.
 -}
 constantDecoder : a -> ResponseDecoder a
 constantDecoder val =
-    \status _ _ ->
+    \status metadata _ ->
         case status of
             GoodStatus ->
                 Ok val
 
             BadStatus ->
-                Http.BadStatus
+                Http.BadStatus metadata.statusCode |> Err
 
 
 methodToString : Method -> String

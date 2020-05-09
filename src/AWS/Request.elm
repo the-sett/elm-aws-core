@@ -1,5 +1,5 @@
 module AWS.Request exposing
-    ( HttpStatus
+    ( HttpStatus(..)
     , ResponseDecoder
     , Unsigned
     , queryString

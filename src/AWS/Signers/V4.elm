@@ -2,7 +2,7 @@ module AWS.Signers.V4 exposing (addAuthorization, addSessionToken, algorithm, au
 
 import AWS.Body exposing (Body, explicitMimetype)
 import AWS.Credentials as Credentials exposing (Credentials)
-import AWS.Request exposing (Unsigned)
+import AWS.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Service)
 import AWS.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
@@ -39,20 +39,14 @@ sign service creds date req =
                 Http.NetworkError_ ->
                     Http.NetworkError |> Err
 
-                Http.BadStatus_ metadata _ ->
-                    Http.BadStatus metadata.statusCode |> Err
+                Http.BadStatus_ metadata body ->
+                    req.decoder BadStatus metadata body
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder body
-                        |> Result.mapError Http.BadBody
+                    req.decoder GoodStatus metadata body
 
         resolver =
-            case req.responseParser of
-                Just parser ->
-                    Http.stringResolver parser
-
-                Nothing ->
-                    Http.stringResolver responseDecoder
+            Http.stringResolver responseDecoder
     in
     Http.task
         { method = req.method
