@@ -67,10 +67,10 @@ send service credentials req =
     let
         prepareRequest : Request a -> Request a
         prepareRequest innerReq =
-            case Service.protocol service of
+            case service.protocol of
                 JSON ->
                     addHeaders
-                        [ ( "x-amz-target", Service.targetPrefix service ++ "." ++ innerReq.name ) ]
+                        [ ( "x-amz-target", service.targetPrefix ++ "." ++ innerReq.name ) ]
                         innerReq
 
                 _ ->
@@ -78,7 +78,7 @@ send service credentials req =
 
         signWithTimestamp : Request a -> Posix -> Task Http.Error a
         signWithTimestamp innerReq posix =
-            case Service.signer service of
+            case service.signer of
                 SignV4 ->
                     V4.sign service credentials posix innerReq
 
@@ -98,10 +98,10 @@ sendUnsigned service req =
     let
         prepareRequest : Request a -> Request a
         prepareRequest innerReq =
-            case Service.protocol service of
+            case service.protocol of
                 JSON ->
                     addHeaders
-                        [ ( "x-amz-target", Service.targetPrefix service ++ "." ++ innerReq.name ) ]
+                        [ ( "x-amz-target", service.targetPrefix ++ "." ++ innerReq.name ) ]
                         innerReq
 
                 _ ->

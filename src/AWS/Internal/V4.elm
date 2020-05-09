@@ -10,6 +10,7 @@ import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.Service as IntService
 import AWS.Internal.UrlBuilder
 import AWS.Service as Service exposing (Service)
 import Crypto.HMAC exposing (sha256)
@@ -88,12 +89,12 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Accept", Service.acceptType service ) ]
+            [ ( "Accept", IntService.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
 
           else
-            [ ( "Content-Type", Service.contentType service ) ]
+            [ ( "Content-Type", IntService.contentType service ) ]
         ]
 
 
@@ -133,7 +134,7 @@ addAuthorization service creds date req headersList =
             date
             service
             req
-            (headersList |> (::) ( "Host", Service.host service ))
+            (headersList |> (::) ( "Host", IntService.host service ))
       )
     ]
         |> List.append headersList
@@ -167,7 +168,7 @@ authorization creds date service req rawHeaders =
             filterHeaders [ "content-type", "accept" ] rawHeaders
 
         canon =
-            canonical (Service.signer service) req.method req.path filteredHeaders req.query req.body
+            canonical service.signer req.method req.path filteredHeaders req.query req.body
 
         scope =
             credentialScope date creds service
@@ -187,8 +188,8 @@ authorization creds date service req rawHeaders =
 credentialScope : Posix -> Credentials -> Service -> String
 credentialScope date creds service =
     [ date |> formatPosix |> String.slice 0 8
-    , Service.region service
-    , Service.endpointPrefix service
+    , IntService.region service
+    , service.endpointPrefix
     , "aws4_request"
     ]
         |> String.join "/"
@@ -208,8 +209,8 @@ signature creds service date toSign =
         |> (++) "AWS4"
         |> Bytes.fromUTF8
         |> digest (formatPosix date |> String.slice 0 8)
-        |> digest (Service.region service)
-        |> digest (Service.endpointPrefix service)
+        |> digest (IntService.region service)
+        |> digest service.endpointPrefix
         |> digest "aws4_request"
         |> digest toSign
         |> Hex.fromByteList

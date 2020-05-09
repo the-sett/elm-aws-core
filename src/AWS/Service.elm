@@ -3,7 +3,6 @@ module AWS.Service exposing
     , defineGlobal, defineRegional
     , ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-    , host, endpointPrefix, acceptType, signer, contentType, region, protocol, targetPrefix
     )
 
 {-| AWS service configuration.
@@ -19,11 +18,6 @@ module AWS.Service exposing
 # Optional properties that can be added to a Service.
 
 @docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-
-
-# Internals
-
-@docs host, endpointPrefix, acceptType, signer, contentType, region, protocol, targetPrefix
 
 -}
 
@@ -226,65 +220,6 @@ define prefix apiVersion proto signerType =
     }
 
 
-{-| Set the target prefix.
--}
-targetPrefix : Service -> String
-targetPrefix spec =
-    spec.targetPrefix
-
-
-{-| Name of the service.
--}
-endpointPrefix : Service -> String
-endpointPrefix spec =
-    spec.endpointPrefix
-
-
-{-| Service signature version.
--}
-signer : Service -> Signer
-signer spec =
-    spec.signer
-
-
-{-| Protocol of the service.
--}
-protocol : Service -> Protocol
-protocol spec =
-    spec.protocol
-
-
-{-| Gets the service content type header value.
--}
-contentType : Service -> String
-contentType spec =
-    (case spec.protocol of
-        REST_XML ->
-            "application/xml"
-
-        _ ->
-            case spec.jsonVersion of
-                Just apiVersion ->
-                    "application/x-amz-json-" ++ apiVersion
-
-                Nothing ->
-                    "application/json"
-    )
-        ++ "; charset=utf-8"
-
-
-{-| Gets the service Accept header value.
--}
-acceptType : Service -> String
-acceptType spec =
-    case spec.protocol of
-        REST_XML ->
-            "application/xml"
-
-        _ ->
-            "application/json"
-
-
 
 -- ENDPOINTS
 
@@ -303,13 +238,6 @@ globalEndpoint =
     GlobalEndpoint
 
 
-{-| Service endpoint as a hostname.
--}
-host : Service -> String
-host spec =
-    spec.hostResolver spec.endpoint spec.endpointPrefix
-
-
 defaultHostResolver : Endpoint -> String -> String
 defaultHostResolver endpoint prefix =
     case endpoint of
@@ -318,13 +246,6 @@ defaultHostResolver endpoint prefix =
 
         RegionalEndpoint rgn ->
             prefix ++ "." ++ rgn ++ ".amazonaws.com"
-
-
-{-| Service region.
--}
-region : Service -> String
-region { endpoint, regionResolver } =
-    regionResolver endpoint
 
 
 defaultRegionResolver : Endpoint -> String

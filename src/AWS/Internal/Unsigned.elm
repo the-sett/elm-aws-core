@@ -6,6 +6,7 @@ module AWS.Internal.Unsigned exposing (prepare)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.Service as IntService
 import AWS.Internal.UrlBuilder
 import AWS.Service as Service exposing (Service)
 import Http
@@ -73,12 +74,12 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Accept", Service.acceptType service ) ]
+            [ ( "Accept", IntService.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
 
           else
-            [ ( "Content-Type", Service.contentType service ) ]
+            [ ( "Content-Type", IntService.contentType service ) ]
         ]
 
 
