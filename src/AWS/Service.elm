@@ -2,7 +2,8 @@ module AWS.Service exposing
     ( Service
     , defineGlobal, defineRegional
     , ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
-    , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
+    , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace
+    , toDigitalOceanSpaces
     )
 
 {-| AWS service configuration.
@@ -17,7 +18,15 @@ module AWS.Service exposing
 
 # Optional properties that can be added to a Service.
 
-@docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
+@docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace
+
+
+# Digital Ocean Services
+
+Can be used to map the host name to Digial Ocean instead of AWS. Many AWS services
+are proxied by Digital Ocean.
+
+@docs toDigitalOceanSpaces
 
 -}
 
@@ -39,6 +48,28 @@ type alias Service =
     , endpoint : Endpoint
     , hostResolver : Endpoint -> String -> String
     , regionResolver : Endpoint -> String
+    }
+
+
+define :
+    String
+    -> ApiVersion
+    -> Protocol
+    -> Signer
+    -> Service
+define prefix apiVersion proto signerType =
+    { endpointPrefix = prefix
+    , protocol = proto
+    , signer = signerType
+    , apiVersion = apiVersion
+    , jsonVersion = Nothing
+    , signingName = Nothing
+    , targetPrefix = defaultTargetPrefix prefix apiVersion
+    , timestampFormat = defaultTimestampFormat proto
+    , xmlNamespace = Nothing
+    , endpoint = GlobalEndpoint
+    , hostResolver = defaultHostResolver
+    , regionResolver = defaultRegionResolver
     }
 
 
@@ -108,13 +139,7 @@ type TimestampFormat
 
 
 
--- OPTIONAL SETTERS
-
-
-{-| Specifies JSON version.
--}
-type alias JsonVersion =
-    String
+--=== Optional properties that can be added to a Service.
 
 
 {-| Set the JSON apiVersion.
@@ -125,33 +150,6 @@ Use this if `jsonVersion` is provided in the metadata.
 setJsonVersion : String -> Service -> Service
 setJsonVersion jsonVersion service =
     { service | jsonVersion = Just jsonVersion }
-
-
-{-| Use Digital Ocean Spaces as the backend service provider.
-
-Changes the way hostnames are resolved.
-
--}
-toDigitalOceanSpaces : Service -> Service
-toDigitalOceanSpaces service =
-    { service
-        | hostResolver =
-            \endpoint _ ->
-                case endpoint of
-                    GlobalEndpoint ->
-                        "nyc3.digitaloceanspaces.com"
-
-                    RegionalEndpoint rgn ->
-                        rgn ++ ".digitaloceanspaces.com"
-        , regionResolver =
-            \endpoint ->
-                case endpoint of
-                    GlobalEndpoint ->
-                        "nyc3"
-
-                    RegionalEndpoint rgn ->
-                        rgn
-    }
 
 
 {-| Set the signing name for the service.
@@ -195,47 +193,38 @@ setXmlNamespace namespace service =
 
 
 
--- Move to Internal module.
+--=== Digital Ocean Services.
 
 
-define :
-    String
-    -> ApiVersion
-    -> Protocol
-    -> Signer
-    -> Service
-define prefix apiVersion proto signerType =
-    { endpointPrefix = prefix
-    , protocol = proto
-    , signer = signerType
-    , apiVersion = apiVersion
-    , jsonVersion = Nothing
-    , signingName = Nothing
-    , targetPrefix = defaultTargetPrefix prefix apiVersion
-    , timestampFormat = defaultTimestampFormat proto
-    , xmlNamespace = Nothing
-    , endpoint = GlobalEndpoint
-    , hostResolver = defaultHostResolver
-    , regionResolver = defaultRegionResolver
+{-| Use Digital Ocean Spaces as the backend service provider.
+
+Changes the way hostnames are resolved.
+
+-}
+toDigitalOceanSpaces : Service -> Service
+toDigitalOceanSpaces service =
+    { service
+        | hostResolver =
+            \endpoint _ ->
+                case endpoint of
+                    GlobalEndpoint ->
+                        "nyc3.digitaloceanspaces.com"
+
+                    RegionalEndpoint rgn ->
+                        rgn ++ ".digitaloceanspaces.com"
+        , regionResolver =
+            \endpoint ->
+                case endpoint of
+                    GlobalEndpoint ->
+                        "nyc3"
+
+                    RegionalEndpoint rgn ->
+                        rgn
     }
 
 
 
--- ENDPOINTS
-
-
-{-| Create a regional endpoint given a region.
--}
-regionalEndpoint : Region -> Endpoint
-regionalEndpoint =
-    RegionalEndpoint
-
-
-{-| Create a global endpoint.
--}
-globalEndpoint : Endpoint
-globalEndpoint =
-    GlobalEndpoint
+--=== Helpers
 
 
 defaultHostResolver : Endpoint -> String -> String
@@ -257,31 +246,6 @@ defaultRegionResolver endpoint =
         GlobalEndpoint ->
             -- See http://docs.aws.amazon.com/general/latest/gr/sigv4_changes.html
             "us-east-1"
-
-
-{-| Use the timestamp format ISO8601.
--}
-iso8601 : TimestampFormat
-iso8601 =
-    ISO8601
-
-
-{-| Use the timestamp format RCF822.
--}
-rfc822 : TimestampFormat
-rfc822 =
-    RFC822
-
-
-{-| Use the timestamp format UnixTimestamp.
--}
-unixTimestamp : TimestampFormat
-unixTimestamp =
-    UnixTimestamp
-
-
-
--- HELPERS
 
 
 defaultTargetPrefix : String -> ApiVersion -> String
