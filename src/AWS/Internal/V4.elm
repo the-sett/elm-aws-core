@@ -1,10 +1,10 @@
 module AWS.Internal.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
 
-import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Credentials as Credentials exposing (Credentials)
+import AWS.Internal.Body exposing (Body, explicitMimetype)
+import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
 import AWS.Service as Service exposing (Service)
-import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import Crypto.HMAC exposing (sha256)
 import Http
 import Iso8601
