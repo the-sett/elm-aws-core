@@ -32,21 +32,20 @@ import Enum exposing (Enum)
 
 {-| Defines an AWS service.
 -}
-type Service
-    = Service
-        { endpointPrefix : String
-        , apiVersion : ApiVersion
-        , protocol : Protocol
-        , signer : Signer
-        , jsonVersion : Maybe String
-        , signingName : Maybe String
-        , targetPrefix : String
-        , timestampFormat : TimestampFormat
-        , xmlNamespace : Maybe String
-        , endpoint : Endpoint
-        , hostResolver : Endpoint -> String -> String
-        , regionResolver : Endpoint -> String
-        }
+type alias Service =
+    { endpointPrefix : String
+    , apiVersion : ApiVersion
+    , protocol : Protocol
+    , signer : Signer
+    , jsonVersion : Maybe String
+    , signingName : Maybe String
+    , targetPrefix : String
+    , timestampFormat : TimestampFormat
+    , xmlNamespace : Maybe String
+    , endpoint : Endpoint
+    , hostResolver : Endpoint -> String -> String
+    , regionResolver : Endpoint -> String
+    }
 
 
 {-| Creates a global service definition.
@@ -60,11 +59,11 @@ defineGlobal =
 -}
 defineRegional : String -> ApiVersion -> Protocol -> Signer -> Region -> Service
 defineRegional prefix apiVersion proto signerType rgn =
-    case
-        define prefix apiVersion proto signerType
-    of
-        Service s ->
-            Service { s | endpoint = RegionalEndpoint rgn }
+    let
+        svc =
+            define prefix apiVersion proto signerType
+    in
+    { svc | endpoint = RegionalEndpoint rgn }
 
 
 {-| Version of a service.
@@ -130,8 +129,8 @@ Use this if `jsonVersion` is provided in the metadata.
 
 -}
 setJsonVersion : String -> Service -> Service
-setJsonVersion jsonVersion (Service service) =
-    Service { service | jsonVersion = Just jsonVersion }
+setJsonVersion jsonVersion service =
+    { service | jsonVersion = Just jsonVersion }
 
 
 {-| Use Digital Ocean Spaces as the backend service provider.
@@ -140,26 +139,25 @@ Changes the way hostnames are resolved.
 
 -}
 toDigitalOceanSpaces : Service -> Service
-toDigitalOceanSpaces (Service service) =
-    Service
-        { service
-            | hostResolver =
-                \endpoint _ ->
-                    case endpoint of
-                        GlobalEndpoint ->
-                            "nyc3.digitaloceanspaces.com"
+toDigitalOceanSpaces service =
+    { service
+        | hostResolver =
+            \endpoint _ ->
+                case endpoint of
+                    GlobalEndpoint ->
+                        "nyc3.digitaloceanspaces.com"
 
-                        RegionalEndpoint rgn ->
-                            rgn ++ ".digitaloceanspaces.com"
-            , regionResolver =
-                \endpoint ->
-                    case endpoint of
-                        GlobalEndpoint ->
-                            "nyc3"
+                    RegionalEndpoint rgn ->
+                        rgn ++ ".digitaloceanspaces.com"
+        , regionResolver =
+            \endpoint ->
+                case endpoint of
+                    GlobalEndpoint ->
+                        "nyc3"
 
-                        RegionalEndpoint rgn ->
-                            rgn
-        }
+                    RegionalEndpoint rgn ->
+                        rgn
+    }
 
 
 {-| Set the signing name for the service.
@@ -168,8 +166,8 @@ Use this if `signingName` is provided in the metadata.
 
 -}
 setSigningName : String -> Service -> Service
-setSigningName name (Service service) =
-    Service { service | signingName = Just name }
+setSigningName name service =
+    { service | signingName = Just name }
 
 
 {-| Set the target prefix for the service.
@@ -178,8 +176,8 @@ Use this if `targetPrefix` is provided in the metadata.
 
 -}
 setTargetPrefix : String -> Service -> Service
-setTargetPrefix prefix (Service service) =
-    Service { service | targetPrefix = prefix }
+setTargetPrefix prefix service =
+    { service | targetPrefix = prefix }
 
 
 {-| Set the timestamp format for the service.
@@ -188,8 +186,8 @@ Use this if `timestampFormat` is provided in the metadata.
 
 -}
 setTimestampFormat : TimestampFormat -> Service -> Service
-setTimestampFormat format (Service service) =
-    Service { service | timestampFormat = format }
+setTimestampFormat format service =
+    { service | timestampFormat = format }
 
 
 {-| Set the XML namespace for the service.
@@ -198,8 +196,8 @@ Use this if `xmlNamespace` is provided in the metadata.
 
 -}
 setXmlNamespace : String -> Service -> Service
-setXmlNamespace namespace (Service service) =
-    Service { service | xmlNamespace = Just namespace }
+setXmlNamespace namespace service =
+    { service | xmlNamespace = Just namespace }
 
 
 
@@ -213,54 +211,53 @@ define :
     -> Signer
     -> Service
 define prefix apiVersion proto signerType =
-    Service
-        { endpointPrefix = prefix
-        , protocol = proto
-        , signer = signerType
-        , apiVersion = apiVersion
-        , jsonVersion = Nothing
-        , signingName = Nothing
-        , targetPrefix = defaultTargetPrefix prefix apiVersion
-        , timestampFormat = defaultTimestampFormat proto
-        , xmlNamespace = Nothing
-        , endpoint = GlobalEndpoint
-        , hostResolver = defaultHostResolver
-        , regionResolver = defaultRegionResolver
-        }
+    { endpointPrefix = prefix
+    , protocol = proto
+    , signer = signerType
+    , apiVersion = apiVersion
+    , jsonVersion = Nothing
+    , signingName = Nothing
+    , targetPrefix = defaultTargetPrefix prefix apiVersion
+    , timestampFormat = defaultTimestampFormat proto
+    , xmlNamespace = Nothing
+    , endpoint = GlobalEndpoint
+    , hostResolver = defaultHostResolver
+    , regionResolver = defaultRegionResolver
+    }
 
 
 {-| Set the target prefix.
 -}
 targetPrefix : Service -> String
-targetPrefix (Service spec) =
+targetPrefix spec =
     spec.targetPrefix
 
 
 {-| Name of the service.
 -}
 endpointPrefix : Service -> String
-endpointPrefix (Service spec) =
+endpointPrefix spec =
     spec.endpointPrefix
 
 
 {-| Service signature version.
 -}
 signer : Service -> Signer
-signer (Service spec) =
+signer spec =
     spec.signer
 
 
 {-| Protocol of the service.
 -}
 protocol : Service -> Protocol
-protocol (Service spec) =
+protocol spec =
     spec.protocol
 
 
 {-| Gets the service content type header value.
 -}
 contentType : Service -> String
-contentType (Service spec) =
+contentType spec =
     (case spec.protocol of
         REST_XML ->
             "application/xml"
@@ -279,7 +276,7 @@ contentType (Service spec) =
 {-| Gets the service Accept header value.
 -}
 acceptType : Service -> String
-acceptType (Service spec) =
+acceptType spec =
     case spec.protocol of
         REST_XML ->
             "application/xml"
@@ -309,7 +306,7 @@ globalEndpoint =
 {-| Service endpoint as a hostname.
 -}
 host : Service -> String
-host (Service spec) =
+host spec =
     spec.hostResolver spec.endpoint spec.endpointPrefix
 
 
@@ -326,7 +323,7 @@ defaultHostResolver endpoint prefix =
 {-| Service region.
 -}
 region : Service -> String
-region (Service { endpoint, regionResolver }) =
+region { endpoint, regionResolver } =
     regionResolver endpoint
 
 
