@@ -1,9 +1,9 @@
 module AWS.Service exposing
-    ( defineGlobal, defineRegional
-    , Service, ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
+    ( Service
+    , defineGlobal, defineRegional
+    , ApiVersion, Region, Protocol(..), Signer(..), TimestampFormat(..)
     , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
-    , endpointPrefix, region, host, protocol, signer, targetPrefix, contentType, acceptType
-    , signerEnum, protocolEnum, timestampFormatEnum
+    , host, endpointPrefix, acceptType, signer, contentType, region, protocol, targetPrefix
     )
 
 {-| AWS service configuration.
@@ -11,8 +11,9 @@ module AWS.Service exposing
 
 # Define a Service.
 
+@docs Service
 @docs defineGlobal, defineRegional
-@docs Service, ApiVersion, Region, Protocol, Signer, TimestampFormat
+@docs ApiVersion, Region, Protocol, Signer, TimestampFormat
 
 
 # Optional properties that can be added to a Service.
@@ -20,22 +21,13 @@ module AWS.Service exposing
 @docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace, toDigitalOceanSpaces
 
 
-# Extract the properties of a Service.
+# Internals
 
-@docs endpointPrefix, region, host, protocol, signer, targetPrefix, contentType, acceptType
-
-
-# Enumerations of enumerable service properties, for convenience.
-
-@docs signerEnum, protocolEnum, timestampFormatEnum
+@docs host, endpointPrefix, acceptType, signer, contentType, region, protocol, targetPrefix
 
 -}
 
 import Enum exposing (Enum)
-
-
-
--- SERVICES
 
 
 {-| Defines an AWS service.
@@ -57,62 +49,16 @@ type Service
         }
 
 
-{-| Version of a service.
--}
-type alias ApiVersion =
-    String
-
-
-{-| Specifies JSON version.
--}
-type alias JsonVersion =
-    String
-
-
-define :
-    String
-    -> ApiVersion
-    -> Protocol
-    -> Signer
-    -> Service
-define prefix apiVersion proto signerType =
-    Service
-        { endpointPrefix = prefix
-        , protocol = proto
-        , signer = signerType
-        , apiVersion = apiVersion
-        , jsonVersion = Nothing
-        , signingName = Nothing
-        , targetPrefix = defaultTargetPrefix prefix apiVersion
-        , timestampFormat = defaultTimestampFormat proto
-        , xmlNamespace = Nothing
-        , endpoint = GlobalEndpoint
-        , hostResolver = defaultHostResolver
-        , regionResolver = defaultRegionResolver
-        }
-
-
 {-| Creates a global service definition.
 -}
-defineGlobal :
-    String
-    -> ApiVersion
-    -> Protocol
-    -> Signer
-    -> Service
+defineGlobal : String -> ApiVersion -> Protocol -> Signer -> Service
 defineGlobal =
     define
 
 
 {-| Creates a regional service definition.
 -}
-defineRegional :
-    String
-    -> ApiVersion
-    -> Protocol
-    -> Signer
-    -> Region
-    -> Service
+defineRegional : String -> ApiVersion -> Protocol -> Signer -> Region -> Service
 defineRegional prefix apiVersion proto signerType rgn =
     case
         define prefix apiVersion proto signerType
@@ -121,8 +67,61 @@ defineRegional prefix apiVersion proto signerType rgn =
             Service { s | endpoint = RegionalEndpoint rgn }
 
 
+{-| Version of a service.
+-}
+type alias ApiVersion =
+    String
+
+
+{-| An AWS region string.
+
+For example `"us-east-1"`.
+
+-}
+type alias Region =
+    String
+
+
+{-| Defines the different protocols that AWS services can use.
+-}
+type Protocol
+    = EC2
+    | JSON
+    | QUERY
+    | REST_JSON
+    | REST_XML
+
+
+{-| Defines the different signing schemes that AWS services can use.
+-}
+type Signer
+    = SignV4
+    | SignS3
+
+
+{-| Defines an AWS service endpoint.
+-}
+type Endpoint
+    = GlobalEndpoint
+    | RegionalEndpoint Region
+
+
+{-| Defines the different timestamp formats that AWS services can use.
+-}
+type TimestampFormat
+    = ISO8601
+    | RFC822
+    | UnixTimestamp
+
+
 
 -- OPTIONAL SETTERS
+
+
+{-| Specifies JSON version.
+-}
+type alias JsonVersion =
+    String
 
 
 {-| Set the JSON apiVersion.
@@ -204,7 +203,30 @@ setXmlNamespace namespace (Service service) =
 
 
 
--- GETTERS
+-- Move to Internal module.
+
+
+define :
+    String
+    -> ApiVersion
+    -> Protocol
+    -> Signer
+    -> Service
+define prefix apiVersion proto signerType =
+    Service
+        { endpointPrefix = prefix
+        , protocol = proto
+        , signer = signerType
+        , apiVersion = apiVersion
+        , jsonVersion = Nothing
+        , signingName = Nothing
+        , targetPrefix = defaultTargetPrefix prefix apiVersion
+        , timestampFormat = defaultTimestampFormat proto
+        , xmlNamespace = Nothing
+        , endpoint = GlobalEndpoint
+        , hostResolver = defaultHostResolver
+        , regionResolver = defaultRegionResolver
+        }
 
 
 {-| Set the target prefix.
@@ -270,22 +292,6 @@ acceptType (Service spec) =
 -- ENDPOINTS
 
 
-{-| Defines an AWS service endpoint.
--}
-type Endpoint
-    = GlobalEndpoint
-    | RegionalEndpoint Region
-
-
-{-| An AWS region string.
-
-For example `"us-east-1"`.
-
--}
-type alias Region =
-    String
-
-
 {-| Create a regional endpoint given a region.
 -}
 regionalEndpoint : Region -> Endpoint
@@ -333,113 +339,6 @@ defaultRegionResolver endpoint =
         GlobalEndpoint ->
             -- See http://docs.aws.amazon.com/general/latest/gr/sigv4_changes.html
             "us-east-1"
-
-
-
--- PROTOCOLS
-
-
-{-| Defines the different protocols that AWS services can use.
--}
-type Protocol
-    = EC2
-    | JSON
-    | QUERY
-    | REST_JSON
-    | REST_XML
-
-
-{-| Enumerates the protocols.
--}
-protocolEnum : Enum Protocol
-protocolEnum =
-    Enum.define
-        [ EC2
-        , JSON
-        , QUERY
-        , REST_JSON
-        , REST_XML
-        ]
-        (\val ->
-            case val of
-                EC2 ->
-                    "ec2"
-
-                JSON ->
-                    "json"
-
-                QUERY ->
-                    "query"
-
-                REST_JSON ->
-                    "rest-json"
-
-                REST_XML ->
-                    "rest-xml"
-        )
-
-
-
--- SIGNERS
-
-
-{-| Defines the different signing schemes that AWS services can use.
--}
-type Signer
-    = SignV4
-    | SignS3
-
-
-{-| Enumerates the signing schemes.
--}
-signerEnum : Enum Signer
-signerEnum =
-    Enum.define
-        [ SignV4
-        , SignS3
-        ]
-        (\val ->
-            case val of
-                SignV4 ->
-                    "v4"
-
-                SignS3 ->
-                    "s3"
-        )
-
-
-
--- TIMESTAMP FORMATS
-
-
-{-| Defines the different timestamp formats that AWS services can use.
--}
-type TimestampFormat
-    = ISO8601
-    | RFC822
-    | UnixTimestamp
-
-
-{-| Enumerates the timestamp formats.
--}
-timestampFormatEnum : Enum TimestampFormat
-timestampFormatEnum =
-    Enum.define
-        [ ISO8601
-        , RFC822
-        , UnixTimestamp
-        ]
-        (\val ->
-            case val of
-                ISO8601 ->
-                    "iso8601"
-
-                RFC822 ->
-                    "rfc822"
-
-                UnixTimestamp ->
-                    "unixTimestamp"
-        )
 
 
 {-| Use the timestamp format ISO8601.
@@ -491,3 +390,71 @@ defaultTimestampFormat proto =
 
         _ ->
             ISO8601
+
+
+
+-- These not needed here. Put them in elm-aws-codegen.
+
+
+timestampFormatEnum : Enum TimestampFormat
+timestampFormatEnum =
+    Enum.define
+        [ ISO8601
+        , RFC822
+        , UnixTimestamp
+        ]
+        (\val ->
+            case val of
+                ISO8601 ->
+                    "iso8601"
+
+                RFC822 ->
+                    "rfc822"
+
+                UnixTimestamp ->
+                    "unixTimestamp"
+        )
+
+
+protocolEnum : Enum Protocol
+protocolEnum =
+    Enum.define
+        [ EC2
+        , JSON
+        , QUERY
+        , REST_JSON
+        , REST_XML
+        ]
+        (\val ->
+            case val of
+                EC2 ->
+                    "ec2"
+
+                JSON ->
+                    "json"
+
+                QUERY ->
+                    "query"
+
+                REST_JSON ->
+                    "rest-json"
+
+                REST_XML ->
+                    "rest-xml"
+        )
+
+
+signerEnum : Enum Signer
+signerEnum =
+    Enum.define
+        [ SignV4
+        , SignS3
+        ]
+        (\val ->
+            case val of
+                SignV4 ->
+                    "v4"
+
+                SignS3 ->
+                    "s3"
+        )
