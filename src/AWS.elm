@@ -1,4 +1,4 @@
-module AWS.AWS exposing (toAWSService)
+module AWS exposing (toAWSService)
 
 {-| Flarge barge barge.
 
