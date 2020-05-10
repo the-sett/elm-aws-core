@@ -6,9 +6,8 @@ module AWS.Internal.Unsigned exposing (prepare)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
-import AWS.Internal.Service as IntService
+import AWS.Internal.Service as IntService exposing (Service)
 import AWS.Internal.UrlBuilder
-import AWS.Service as Service exposing (Service)
 import Http
 import Iso8601
 import Json.Decode as Decode

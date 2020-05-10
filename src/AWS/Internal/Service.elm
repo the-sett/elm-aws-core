@@ -1,6 +1,22 @@
-module AWS.Internal.Service exposing (acceptType, contentType, host, region)
+module AWS.Internal.Service exposing (Service, acceptType, contentType, host, region)
 
-import AWS.Service exposing (Protocol(..), Service)
+import AWS.Service exposing (ApiVersion, Endpoint, Protocol(..), ServiceConfig, Signer, TimestampFormat)
+
+
+type alias Service =
+    { endpointPrefix : String
+    , apiVersion : ApiVersion
+    , protocol : Protocol
+    , signer : Signer
+    , targetPrefix : String
+    , timestampFormat : TimestampFormat
+    , endpoint : Endpoint
+    , jsonVersion : Maybe String
+    , signingName : Maybe String
+    , xmlNamespace : Maybe String
+    , hostResolver : Endpoint -> String -> String
+    , regionResolver : Endpoint -> String
+    }
 
 
 {-| Service endpoint as a hostname.

@@ -42,9 +42,10 @@ module AWS.Http exposing
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
+import AWS.Internal.Service as IntService exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
-import AWS.Service as Service exposing (Protocol(..), Service, Signer(..))
+import AWS.Service as Service exposing (Protocol(..), Signer(..))
 import Http exposing (Metadata)
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode

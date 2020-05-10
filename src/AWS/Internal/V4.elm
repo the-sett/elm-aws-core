@@ -10,9 +10,8 @@ import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
 import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
-import AWS.Internal.Service as IntService
+import AWS.Internal.Service as IntService exposing (Service)
 import AWS.Internal.UrlBuilder
-import AWS.Service as Service exposing (Service)
 import Crypto.HMAC exposing (sha256)
 import Http
 import Iso8601

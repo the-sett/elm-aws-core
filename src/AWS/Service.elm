@@ -1,9 +1,8 @@
 module AWS.Service exposing
-    ( Service
+    ( ServiceConfig
     , defineGlobal, defineRegional
     , ApiVersion, Protocol(..), Signer(..), TimestampFormat(..), Region, Endpoint(..)
-    , setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace
-    , toDigitalOceanSpaces
+    , withJsonVersion, withSigningName, withTargetPrefix, withTimestampFormat, withXmlNamespace
     )
 
 {-| AWS service configuration.
@@ -11,14 +10,14 @@ module AWS.Service exposing
 
 # Define a Service.
 
-@docs Service
+@docs ServiceConfig
 @docs defineGlobal, defineRegional
 @docs ApiVersion, Protocol, Signer, TimestampFormat, Region, Endpoint
 
 
 # Optional properties that can be added to a Service.
 
-@docs setJsonVersion, setSigningName, setTargetPrefix, setTimestampFormat, setXmlNamespace
+@docs withJsonVersion, withSigningName, withTargetPrefix, withTimestampFormat, withXmlNamespace
 
 
 # Digital Ocean Services
@@ -26,38 +25,31 @@ module AWS.Service exposing
 Can be used to map the host name to Digial Ocean instead of AWS. Many AWS services
 are proxied by Digital Ocean.
 
-@docs toDigitalOceanSpaces
-
 -}
 
 import Enum exposing (Enum)
 
 
-{-| Defines an AWS service.
+{-| Configures an AWS service.
 -}
-type alias Service =
+type alias ServiceConfig =
     { endpointPrefix : String
     , apiVersion : ApiVersion
     , protocol : Protocol
     , signer : Signer
-    , jsonVersion : Maybe String
-    , signingName : Maybe String
     , targetPrefix : String
     , timestampFormat : TimestampFormat
-    , xmlNamespace : Maybe String
     , endpoint : Endpoint
-    , hostResolver : Endpoint -> String -> String
-    , regionResolver : Endpoint -> String
+    , jsonVersion : Maybe String
+    , signingName : Maybe String
+    , xmlNamespace : Maybe String
     }
 
 
-define :
-    String
-    -> ApiVersion
-    -> Protocol
-    -> Signer
-    -> Service
-define prefix apiVersion proto signerType =
+{-| Creates a global service definition.
+-}
+defineGlobal : String -> ApiVersion -> Protocol -> Signer -> ServiceConfig
+defineGlobal prefix apiVersion proto signerType =
     { endpointPrefix = prefix
     , protocol = proto
     , signer = signerType
@@ -68,25 +60,16 @@ define prefix apiVersion proto signerType =
     , timestampFormat = defaultTimestampFormat proto
     , xmlNamespace = Nothing
     , endpoint = GlobalEndpoint
-    , hostResolver = defaultHostResolver
-    , regionResolver = defaultRegionResolver
     }
-
-
-{-| Creates a global service definition.
--}
-defineGlobal : String -> ApiVersion -> Protocol -> Signer -> Service
-defineGlobal =
-    define
 
 
 {-| Creates a regional service definition.
 -}
-defineRegional : String -> ApiVersion -> Protocol -> Signer -> Region -> Service
+defineRegional : String -> ApiVersion -> Protocol -> Signer -> Region -> ServiceConfig
 defineRegional prefix apiVersion proto signerType rgn =
     let
         svc =
-            define prefix apiVersion proto signerType
+            defineGlobal prefix apiVersion proto signerType
     in
     { svc | endpoint = RegionalEndpoint rgn }
 
@@ -147,8 +130,8 @@ type Endpoint
 Use this if `jsonVersion` is provided in the metadata.
 
 -}
-setJsonVersion : String -> Service -> Service
-setJsonVersion jsonVersion service =
+withJsonVersion : String -> ServiceConfig -> ServiceConfig
+withJsonVersion jsonVersion service =
     { service | jsonVersion = Just jsonVersion }
 
 
@@ -157,8 +140,8 @@ setJsonVersion jsonVersion service =
 Use this if `signingName` is provided in the metadata.
 
 -}
-setSigningName : String -> Service -> Service
-setSigningName name service =
+withSigningName : String -> ServiceConfig -> ServiceConfig
+withSigningName name service =
     { service | signingName = Just name }
 
 
@@ -167,8 +150,8 @@ setSigningName name service =
 Use this if `targetPrefix` is provided in the metadata.
 
 -}
-setTargetPrefix : String -> Service -> Service
-setTargetPrefix prefix service =
+withTargetPrefix : String -> ServiceConfig -> ServiceConfig
+withTargetPrefix prefix service =
     { service | targetPrefix = prefix }
 
 
@@ -177,8 +160,8 @@ setTargetPrefix prefix service =
 Use this if `timestampFormat` is provided in the metadata.
 
 -}
-setTimestampFormat : TimestampFormat -> Service -> Service
-setTimestampFormat format service =
+withTimestampFormat : TimestampFormat -> ServiceConfig -> ServiceConfig
+withTimestampFormat format service =
     { service | timestampFormat = format }
 
 
@@ -187,65 +170,48 @@ setTimestampFormat format service =
 Use this if `xmlNamespace` is provided in the metadata.
 
 -}
-setXmlNamespace : String -> Service -> Service
-setXmlNamespace namespace service =
+withXmlNamespace : String -> ServiceConfig -> ServiceConfig
+withXmlNamespace namespace service =
     { service | xmlNamespace = Just namespace }
 
 
 
 --=== Digital Ocean Services.
+{- Use Digital Ocean Spaces as the backend service provider.
 
-
-{-| Use Digital Ocean Spaces as the backend service provider.
-
-Changes the way hostnames are resolved.
+   Changes the way hostnames are resolved.
 
 -}
-toDigitalOceanSpaces : Service -> Service
-toDigitalOceanSpaces service =
-    { service
-        | hostResolver =
-            \endpoint _ ->
-                case endpoint of
-                    GlobalEndpoint ->
-                        "nyc3.digitaloceanspaces.com"
-
-                    RegionalEndpoint rgn ->
-                        rgn ++ ".digitaloceanspaces.com"
-        , regionResolver =
-            \endpoint ->
-                case endpoint of
-                    GlobalEndpoint ->
-                        "nyc3"
-
-                    RegionalEndpoint rgn ->
-                        rgn
-    }
-
-
-
+-- toDigitalOceanService : ServiceConfig -> Service
+-- toDigitalOceanService config =
+--     { endpointPrefix = config.endpointPrefix
+--     , apiVersion = config.apiVersion
+--     , protocol = config.protocol
+--     , signer = config.signer
+--     , targetPrefix = config.targetPrefix
+--     , timestampFormat = config.timestampFormat
+--     , endpoint = config.endpoint
+--     , jsonVersion = config.jsonVersion
+--     , signingName = config.signingName
+--     , xmlNamespace = config.xmlNamespace
+--     , hostResolver =
+--         \endpoint _ ->
+--             case endpoint of
+--                 GlobalEndpoint ->
+--                     "nyc3.digitaloceanspaces.com"
+--
+--                 RegionalEndpoint rgn ->
+--                     rgn ++ ".digitaloceanspaces.com"
+--     , regionResolver =
+--         \endpoint ->
+--             case endpoint of
+--                 GlobalEndpoint ->
+--                     "nyc3"
+--
+--                 RegionalEndpoint rgn ->
+--                     rgn
+--     }
 --=== Helpers
-
-
-defaultHostResolver : Endpoint -> String -> String
-defaultHostResolver endpoint prefix =
-    case endpoint of
-        GlobalEndpoint ->
-            prefix ++ ".amazonaws.com"
-
-        RegionalEndpoint rgn ->
-            prefix ++ "." ++ rgn ++ ".amazonaws.com"
-
-
-defaultRegionResolver : Endpoint -> String
-defaultRegionResolver endpoint =
-    case endpoint of
-        RegionalEndpoint rgn ->
-            rgn
-
-        GlobalEndpoint ->
-            -- See http://docs.aws.amazon.com/general/latest/gr/sigv4_changes.html
-            "us-east-1"
 
 
 defaultTargetPrefix : String -> ApiVersion -> String

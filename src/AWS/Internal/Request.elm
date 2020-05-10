@@ -9,7 +9,7 @@ module AWS.Internal.Request exposing
 -}
 
 import AWS.Internal.Body as Body exposing (Body)
-import AWS.Service as Service exposing (Service)
+import AWS.Internal.Service as Service exposing (Service)
 import Http exposing (Error, Metadata, Response)
 import Json.Decode exposing (Decoder)
 

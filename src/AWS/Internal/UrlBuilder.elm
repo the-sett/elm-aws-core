@@ -1,8 +1,7 @@
 module AWS.Internal.UrlBuilder exposing (url)
 
 import AWS.Internal.Request exposing (Unsigned)
-import AWS.Internal.Service as IntService
-import AWS.Service as Service exposing (Service)
+import AWS.Internal.Service as Service exposing (Service)
 import AWS.Uri
 import Dict exposing (Dict)
 import String
@@ -18,7 +17,7 @@ the complete URL.
 url : Service -> Unsigned a -> String
 url service { path, query } =
     "https://"
-        ++ IntService.host service
+        ++ Service.host service
         ++ path
         ++ queryString query
 
