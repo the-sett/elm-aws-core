@@ -42,8 +42,8 @@ module AWS.Http exposing
 import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
-import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
-import AWS.Internal.Service as IntService exposing (Service)
+import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
 import Http exposing (Metadata)
@@ -122,7 +122,7 @@ sendUnsigned service req =
 {-| Holds an unsigned AWS HTTP request.
 -}
 type alias Request a =
-    AWS.Internal.Request.Unsigned a
+    AWS.Internal.Request.Request a
 
 
 {-| HTTP request methods.

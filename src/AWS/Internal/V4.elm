@@ -9,8 +9,8 @@ module AWS.Internal.V4 exposing (sign)
 import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
-import AWS.Internal.Service as IntService exposing (Service)
+import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
 import Crypto.HMAC exposing (sha256)
 import Http
@@ -29,7 +29,7 @@ sign :
     Service
     -> Credentials
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> Task Http.Error a
 sign service creds date req =
     let
@@ -88,12 +88,12 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Accept", IntService.acceptType service ) ]
+            [ ( "Accept", Service.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
 
           else
-            [ ( "Content-Type", IntService.contentType service ) ]
+            [ ( "Content-Type", Service.contentType service ) ]
         ]
 
 
@@ -123,7 +123,7 @@ addAuthorization :
     Service
     -> Credentials
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> List ( String, String )
     -> List ( String, String )
 addAuthorization service creds date req headersList =
@@ -132,7 +132,7 @@ addAuthorization service creds date req headersList =
             date
             service
             req
-            (headersList |> (::) ( "Host", IntService.host service ))
+            (headersList |> (::) ( "Host", Service.host service ))
       )
     ]
         |> List.append headersList
@@ -156,7 +156,7 @@ authorization :
     Credentials
     -> Posix
     -> Service
-    -> Unsigned a
+    -> Request a
     -> List ( String, String )
     -> String
 authorization creds date service req rawHeaders =
@@ -186,7 +186,7 @@ authorization creds date service req rawHeaders =
 credentialScope : Posix -> Credentials -> Service -> String
 credentialScope date creds service =
     [ date |> formatPosix |> String.slice 0 8
-    , IntService.region service
+    , Service.region service
     , service.endpointPrefix
     , "aws4_request"
     ]
@@ -206,7 +206,7 @@ signature creds service date toSign =
         |> (++) "AWS4"
         |> Bytes.fromUTF8
         |> digest (formatPosix date |> String.slice 0 8)
-        |> digest (IntService.region service)
+        |> digest (Service.region service)
         |> digest service.endpointPrefix
         |> digest "aws4_request"
         |> digest toSign

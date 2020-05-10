@@ -1,6 +1,6 @@
 module AWS.Internal.UrlBuilder exposing (url)
 
-import AWS.Internal.Request exposing (Unsigned)
+import AWS.Internal.Request exposing (Request)
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Uri
 import Dict exposing (Dict)
@@ -14,7 +14,7 @@ This consists of combing together the host name, path and query string to form
 the complete URL.
 
 -}
-url : Service -> Unsigned a -> String
+url : Service -> Request a -> String
 url service { path, query } =
     "https://"
         ++ Service.host service

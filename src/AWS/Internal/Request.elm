@@ -1,7 +1,7 @@
 module AWS.Internal.Request exposing
     ( HttpStatus(..)
+    , Request
     , ResponseDecoder
-    , Unsigned
     , unsigned
     )
 
@@ -48,7 +48,7 @@ type HttpStatus
     | BadStatus
 
 
-type alias Unsigned a =
+type alias Request a =
     { name : String
     , method : String
     , path : String
@@ -65,7 +65,7 @@ unsigned :
     -> String
     -> Body
     -> ResponseDecoder a
-    -> Unsigned a
+    -> Request a
 unsigned name method uri body decoder =
     { name = name
     , method = method

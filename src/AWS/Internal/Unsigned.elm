@@ -5,8 +5,8 @@ module AWS.Internal.Unsigned exposing (prepare)
 
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.Request exposing (HttpStatus(..), ResponseDecoder, Unsigned)
-import AWS.Internal.Service as IntService exposing (Service)
+import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
 import Http
 import Iso8601
@@ -21,7 +21,7 @@ import Time exposing (Posix)
 prepare :
     Service
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> Task Http.Error a
 prepare service date req =
     let
@@ -73,12 +73,12 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Accept", IntService.acceptType service ) ]
+            [ ( "Accept", Service.acceptType service ) ]
         , if List.member "content-type" extraNames || explicitMimetype body /= Nothing then
             []
 
           else
-            [ ( "Content-Type", IntService.contentType service ) ]
+            [ ( "Content-Type", Service.contentType service ) ]
         ]
 
 
