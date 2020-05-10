@@ -7,7 +7,7 @@
     "exposed-modules": [
         "AWS.Credentials",
         "AWS.Http",
-        "AWS.Service",
+        "AWS.Config",
         "AWS.Uri",
         "AWS.KVEncode",
         "AWS"

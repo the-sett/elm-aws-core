@@ -1,6 +1,6 @@
 module AWS.Internal.Service exposing (Service, acceptType, contentType, host, region)
 
-import AWS.Service exposing (ApiVersion, Endpoint, Protocol(..), ServiceConfig, Signer, TimestampFormat)
+import AWS.Config exposing (ApiVersion, Endpoint, Protocol(..), ServiceConfig, Signer, TimestampFormat)
 
 
 type alias Service =

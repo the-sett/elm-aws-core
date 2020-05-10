@@ -6,8 +6,8 @@ module AWS exposing (toAWSService)
 
 -}
 
+import AWS.Config exposing (Endpoint(..), ServiceConfig)
 import AWS.Internal.Service exposing (Service)
-import AWS.Service exposing (Endpoint(..), ServiceConfig)
 
 
 {-| Build an AWS service.

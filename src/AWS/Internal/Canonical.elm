@@ -1,8 +1,8 @@
 module AWS.Internal.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalRaw, canonicalUri, canonicalUrlBuilder, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
+import AWS.Config exposing (Signer(..))
 import AWS.Internal.Body exposing (Body)
 import AWS.Internal.Service as Service exposing (Service)
-import AWS.Service as Service exposing (Signer(..))
 import AWS.Uri
 import Crypto.Hash exposing (sha256)
 import Regex

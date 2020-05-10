@@ -1,4 +1,4 @@
-module AWS.Service exposing
+module AWS.Config exposing
     ( ServiceConfig
     , defineGlobal, defineRegional
     , ApiVersion, Protocol(..), Signer(..), TimestampFormat(..), Region, Endpoint(..)
