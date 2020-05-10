@@ -1,16 +1,22 @@
-module AWS exposing (service)
+module AWS exposing (Service, service)
 
 {-| Build an AWS service definition from its configuration.
 
 Use the `AWS.Config` module to create the configuration for the AWS
 service to use.
 
-@docs service
+@docs Service, service
 
 -}
 
 import AWS.Config exposing (ApiVersion, Endpoint(..), Protocol(..), ServiceConfig, TimestampFormat(..))
 import AWS.Internal.Service exposing (Service)
+
+
+{-| An AWS Service definition. This is needed to make HTTP calls to the service.
+-}
+type alias Service =
+    AWS.Internal.Service.Service
 
 
 {-| Build an AWS service.

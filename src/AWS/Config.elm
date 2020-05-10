@@ -182,6 +182,10 @@ withSigningName name service =
 
 Use this if `targetPrefix` is provided in the API metadata.
 
+Note that `targetPrefix` will default to AWS ++ prefix ++ (apiVersion with the
+'-' characters removed). This only needs to be set to a different value if it differs
+in the API metadata.
+
 -}
 withTargetPrefix : String -> ServiceConfig -> ServiceConfig
 withTargetPrefix prefix service =
@@ -191,6 +195,10 @@ withTargetPrefix prefix service =
 {-| Set the timestamp format for the service.
 
 Use this if `timestampFormat` is provided in the API metadata.
+
+Note that `timestampFormat` defaults to `UnixTimestamp` for JSON and REST\_JSON based
+services and `ISO8601` for other services. Specifying `Nothing` will use the correct
+default, unless it is set to something different in the API metadata.
 
 -}
 withTimestampFormat : TimestampFormat -> ServiceConfig -> ServiceConfig

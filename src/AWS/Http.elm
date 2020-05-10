@@ -89,7 +89,7 @@ send service credentials req =
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
 
 
-{-| Sends a `Request` without signing it.
+{-| Sends a `Request` to a `Service` without signing it.
 -}
 sendUnsigned :
     Service
