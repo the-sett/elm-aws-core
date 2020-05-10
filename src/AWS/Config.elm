@@ -1,29 +1,53 @@
 module AWS.Config exposing
     ( ServiceConfig
-    , defineGlobal, defineRegional
     , ApiVersion, Protocol(..), Signer(..), TimestampFormat(..), Region, Endpoint(..)
+    , defineGlobal, defineRegional
     , withJsonVersion, withSigningName, withTargetPrefix, withTimestampFormat, withXmlNamespace
     )
 
-{-| AWS service configuration.
+{-| A configuration for a service can be built directly, or by using the helper
+functions for convenience.
+
+To build an AWS service configuration directly:
+
+    { endpointPrefix = "lambda"
+    , apiVersion = "2015-03-31"
+    , protocol = AWS.Config.REST_JSON
+    , signer = AWS.Config.SignV4
+    , endpoint = RegionalEndpoint "us-east-1"
+    , jsonVersion = Nothing
+    , signingName = Nothing
+    , xmlNamespace = Nothing
+    , timestampFormat = Nothing
+    , targetPrefix = Nothing
+    }
+
+The same thing with the convenience functions would look like:
+
+    AWS.Service.defineRegional
+        "lambda"
+        "2015-03-31"
+        AWS.Config.REST_JSON
+        AWS.Config.SignV4
+        "us-east-1"
+
+In some of the comments below you will see 'API metadata' mentioned. AWS
+publishes a set of JSON files containing metadata describing each of its services,
+and this is what is being referred to. You can find this metadata here:
+
+<https://github.com/aws/aws-sdk-js/tree/master/apis>
 
 
-# Define a Service.
+# Service configuration.
 
 @docs ServiceConfig
-@docs defineGlobal, defineRegional
 @docs ApiVersion, Protocol, Signer, TimestampFormat, Region, Endpoint
 
 
-# Optional properties that can be added to a Service.
+# Convenience functions to help with service configuration.
 
+@docs defineGlobal, defineRegional
 @docs withJsonVersion, withSigningName, withTargetPrefix, withTimestampFormat, withXmlNamespace
-
-
-# Digital Ocean Services
-
-Can be used to map the host name to Digial Ocean instead of AWS. Many AWS services
-are proxied by Digital Ocean.
 
 -}
 
@@ -31,18 +55,27 @@ import Enum exposing (Enum)
 
 
 {-| Configures an AWS service.
+
+Note that `timestampFormat` defaults to `UnixTimestamp` for JSON and REST\_JSON based
+services and `ISO8601` for other services. Specifying `Nothing` will use the correct
+default, unless it is set to something different in the API metadata.
+
+Also note that `targetPrefix` will default to AWS ++ prefix ++ (apiVersion with the
+'-' characters removed). This only needs to be set to a different value if it differs
+in the API metadata.
+
 -}
 type alias ServiceConfig =
     { endpointPrefix : String
     , apiVersion : ApiVersion
     , protocol : Protocol
     , signer : Signer
-    , targetPrefix : String
-    , timestampFormat : TimestampFormat
     , endpoint : Endpoint
     , jsonVersion : Maybe String
     , signingName : Maybe String
     , xmlNamespace : Maybe String
+    , timestampFormat : Maybe TimestampFormat
+    , targetPrefix : Maybe String
     }
 
 
@@ -56,8 +89,8 @@ defineGlobal prefix apiVersion proto signerType =
     , apiVersion = apiVersion
     , jsonVersion = Nothing
     , signingName = Nothing
-    , targetPrefix = defaultTargetPrefix prefix apiVersion
-    , timestampFormat = defaultTimestampFormat proto
+    , targetPrefix = Nothing -- defaultTargetPrefix prefix apiVersion
+    , timestampFormat = Nothing -- defaultTimestampFormat proto
     , xmlNamespace = Nothing
     , endpoint = GlobalEndpoint
     }
@@ -127,7 +160,7 @@ type Endpoint
 
 {-| Set the JSON apiVersion.
 
-Use this if `jsonVersion` is provided in the metadata.
+Use this if `jsonVersion` is provided in the API metadata.
 
 -}
 withJsonVersion : String -> ServiceConfig -> ServiceConfig
@@ -137,7 +170,7 @@ withJsonVersion jsonVersion service =
 
 {-| Set the signing name for the service.
 
-Use this if `signingName` is provided in the metadata.
+Use this if `signingName` is provided in the API metadata.
 
 -}
 withSigningName : String -> ServiceConfig -> ServiceConfig
@@ -147,27 +180,27 @@ withSigningName name service =
 
 {-| Set the target prefix for the service.
 
-Use this if `targetPrefix` is provided in the metadata.
+Use this if `targetPrefix` is provided in the API metadata.
 
 -}
 withTargetPrefix : String -> ServiceConfig -> ServiceConfig
 withTargetPrefix prefix service =
-    { service | targetPrefix = prefix }
+    { service | targetPrefix = Just prefix }
 
 
 {-| Set the timestamp format for the service.
 
-Use this if `timestampFormat` is provided in the metadata.
+Use this if `timestampFormat` is provided in the API metadata.
 
 -}
 withTimestampFormat : TimestampFormat -> ServiceConfig -> ServiceConfig
 withTimestampFormat format service =
-    { service | timestampFormat = format }
+    { service | timestampFormat = Just format }
 
 
 {-| Set the XML namespace for the service.
 
-Use this if `xmlNamespace` is provided in the metadata.
+Use this if `xmlNamespace` is provided in the API metadata.
 
 -}
 withXmlNamespace : String -> ServiceConfig -> ServiceConfig
@@ -212,35 +245,6 @@ withXmlNamespace namespace service =
 --                     rgn
 --     }
 --=== Helpers
-
-
-defaultTargetPrefix : String -> ApiVersion -> String
-defaultTargetPrefix prefix apiVersion =
-    "AWS"
-        ++ String.toUpper prefix
-        ++ "_"
-        ++ (apiVersion |> String.split "-" |> String.join "")
-
-
-{-| See aws-sdk-js
-
-`lib/model/shape.js`: function TimestampShape
-
--}
-defaultTimestampFormat : Protocol -> TimestampFormat
-defaultTimestampFormat proto =
-    case proto of
-        JSON ->
-            UnixTimestamp
-
-        REST_JSON ->
-            UnixTimestamp
-
-        _ ->
-            ISO8601
-
-
-
 -- These not needed here. Put them in elm-aws-codegen.
 
 

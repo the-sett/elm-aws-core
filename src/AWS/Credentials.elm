@@ -1,15 +1,13 @@
 module AWS.Credentials exposing
     ( Credentials, AccessKeyId, SecretAccessKey
-    , fromAccessKeys, setSessionToken
+    , fromAccessKeys, withSessionToken
     )
 
-{-| AWS credentials.
-
-A set of AWS credentials consists of an acces key id, a secret access key and
+{-| A set of AWS credentials consists of an acces key id, a secret access key and
 an optional session token.
 
 @docs Credentials, AccessKeyId, SecretAccessKey
-@docs fromAccessKeys, setSessionToken
+@docs fromAccessKeys, withSessionToken
 
 -}
 
@@ -49,6 +47,6 @@ fromAccessKeys keyId secretKey =
 
 {-| Sets the session token.
 -}
-setSessionToken : String -> Credentials -> Credentials
-setSessionToken token creds =
+withSessionToken : String -> Credentials -> Credentials
+withSessionToken token creds =
     { creds | sessionToken = Just token }
