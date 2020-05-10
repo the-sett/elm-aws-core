@@ -10,7 +10,7 @@
         "AWS.Config",
         "AWS.Uri",
         "AWS.KVEncode",
-        "AWS"
+        "AWS.Service"
     ],
     "elm-version": "0.19.0 <= v < 0.20.0",
     "dependencies": {

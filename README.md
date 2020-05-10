@@ -14,11 +14,17 @@ query parameters.
 AWS URI encoding was taken from the old `Encode` module and put in its own `Uri`
 module.
 
-Service and Credentials were made into type aliases instead of opaque custom types.
-This mean the accessor functions could be dropped. I don't see any reason to make
-these things opaque, there is no advantage in hiding the implementation.
+ServiceConfig and Credentials were made into type aliases instead of opaque
+custom types. This mean the accessor functions could be dropped. I don't see
+any reason to make these things opaque, there is no advantage in hiding
+the implementation.
 
-A lot of unused code was deleted. The API is now leaner and cleaner.
+Service building was rationalized to remove some oddities. The ServiceConfig is
+now a simple record and easy to understand. The defaulting is explained in the
+docs. The defaulting happens behind the scenes when turning a config into a
+Service.
+
+An amount of unused code was deleted. The API is now leaner and cleaner.
 
 # elm-aws-core
 
@@ -37,12 +43,14 @@ this package as a foundational element.
 
 ## Modules in this package
 
-  - [AWS.Service](AWS-Service): Build a service definition describing the
+  - [AWS.Config](AWS-Config): Build a `ServiceConfig` describing the
   protocol, signing scheme, base URL and so on for a service.
+  - [AWS.Service](AWS-Service): Turn a `ServiceConfig` into a `Service`
+  definition, needed to make HTTP calls to that service.
   - [AWS.Http](AWS-Http): Build requests, sign and send them and decode the
   responses. Signing and sending a request requires both a `Service` and
   some `Credentials`.
-  - [AWS.Credentials](AWS-Credentials): Create AWS credentials used to sign
+  - [AWS.Credentials](AWS-Credentials): Create AWS `Credentials` used to sign
   requests.
   - [AWS.KVEncode](AWS-KVEncode): Utility for helping to encode Elm data into
   key-valued string pairs, for setting query parameters or header fields.

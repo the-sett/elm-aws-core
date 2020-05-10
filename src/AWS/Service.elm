@@ -1,4 +1,4 @@
-module AWS exposing (Service, service)
+module AWS.Service exposing (Service, service)
 
 {-| Build an AWS service definition from its configuration.
 

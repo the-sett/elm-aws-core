@@ -3,15 +3,22 @@ module AWS.Credentials exposing
     , fromAccessKeys, withSessionToken
     )
 
-{-| A set of AWS credentials consists of an acces key id, a secret access key and
-an optional session token.
+{-| A set of AWS credentials consists of an acces key id, a secret access key
+and an optional session token.
+
+Note that credentials are sensitive and should not be bundled with web
+applications; it is a simple matter to extract them if they are. If your Elm
+code is running inside a Lambda function, this may not be a concern. If you Elm
+code is running in a browser it is definitely a security concern. If you are
+looking for a way to obtain credentials through user sign in against AWS Congito,
+this authentication package will do that:
+
+<https://package.elm-lang.org/packages/the-sett/elm-auth-aws/latest/>
 
 @docs Credentials, AccessKeyId, SecretAccessKey
 @docs fromAccessKeys, withSessionToken
 
 -}
-
--- CREDENTIALS
 
 
 {-| Holds AWS credentials.
