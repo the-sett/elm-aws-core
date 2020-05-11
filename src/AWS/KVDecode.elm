@@ -1,41 +1,31 @@
 module AWS.KVDecode exposing
     ( KVDecoder, string, bool, int, float
-    , field, optional
+    , object, field, optional, buildObject
     , Error(..), errorToString
-    -- , map, map2, map3, map4, map5, map6, map7, map8
-    -- , list, dict, keyValuePairs, oneOrMore
-    -- , at, index
-    -- , maybe, oneOf
-    -- , decodeKVPairs,
-    -- , lazy, null, succeed, fail, andThen
+    , decodeKVPairs
+    , map
     )
 
 {-| Blah.
 
 @docs KVDecoder, string, bool, int, float
 
-@docs list, dict, keyValuePairs, oneOrMore
+@docs object, field, optional, buildObject
 
-@docs field, optional, at, index
+@docs Error, errorToString
 
-@docs maybe, oneOf
+@docs decodeKVPairs
 
-@docs decodeKVPairs, Error, errorToString
-
-@docs map, map2, map3, map4, map5, map6, map7, map8
-
-@docs lazy, null, succeed, fail, andThen
+@docs map
 
 -}
 
-import Array exposing (Array)
 import Dict exposing (Dict)
-import Json.Encode
 
 
 type KVDecoder a
     = Val (String -> Result Error a)
-    | Field String (KVDecoder a)
+    | Object (Dict String String -> Result Error a)
 
 
 {-| Decodes a string value.
@@ -90,80 +80,61 @@ float =
 
 
 
--- list : KVDecoder a -> KVDecoder (List a)
--- list =
---     Debug.todo "work in progress"
---
---
--- dict : KVDecoder a -> KVDecoder (Dict String a)
--- dict =
---     Debug.todo "work in progress"
 --=== Records
 
 
 type ObjectDecoder a
-    = ObjectDecoder (KVDecoder a)
+    = ObjectDecoder (Dict String String -> Result Error a)
 
 
 object : a -> ObjectDecoder a
 object ctor =
-    succeed ctor |> ObjectDecoder
+    Ok ctor |> always |> ObjectDecoder
 
 
 field : String -> KVDecoder f -> ObjectDecoder (f -> a) -> ObjectDecoder a
-field name fdecoder odecoder =
-    case odecoder of
-        ObjectDecoder nextDecoder ->
-            ObjectDecoder (map2 (\f x -> f x) nextDecoder (Field name fdecoder))
+field name fdecoder (ObjectDecoder innerFieldFn) =
+    case fdecoder of
+        Val valFn ->
+            ObjectDecoder
+                (\dict ->
+                    case Dict.get name dict of
+                        Nothing ->
+                            MissingField name |> Err
+
+                        Just val ->
+                            Result.map2 (\f x -> f x) (innerFieldFn dict) (valFn val)
+                )
+
+        Object objectFn ->
+            ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict))
 
 
 optional : String -> KVDecoder f -> ObjectDecoder (Maybe f -> a) -> ObjectDecoder a
-optional name fdecoder odecoder =
-    case odecoder of
-        ObjectDecoder nextDecoder ->
-            ObjectDecoder (map2 (\f x -> f x) nextDecoder (Field name (maybe fdecoder)))
+optional name fdecoder (ObjectDecoder innerFieldFn) =
+    case fdecoder of
+        Val valFn ->
+            ObjectDecoder
+                (\dict ->
+                    case Dict.get name dict of
+                        Nothing ->
+                            Result.map (\f -> f Nothing) (innerFieldFn dict)
 
+                        Just val ->
+                            Result.map2 (\f x -> f x) (innerFieldFn dict) (valFn val |> Result.map Just)
+                )
 
-maybe : KVDecoder a -> KVDecoder (Maybe a)
-maybe decoder =
-    case decoder of
-        Val fn ->
-            Val (fn >> Result.map Just)
-
-        Field name innerDecoder ->
-            Field name (maybe innerDecoder)
+        Object objectFn ->
+            ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict |> Result.map Just))
 
 
 buildObject : ObjectDecoder a -> KVDecoder a
-buildObject (ObjectDecoder decoder) =
-    decoder
+buildObject (ObjectDecoder fieldFn) =
+    Object fieldFn
 
 
 
---===
--- keyValuePairs : KVDecoder a -> KVDecoder (List ( String, a ))
--- keyValuePairs =
---     Debug.todo "work in progress"
---
---
--- oneOrMore : (a -> List a -> value) -> KVDecoder a -> KVDecoder value
--- oneOrMore =
---     Debug.todo "work in progress"
---
---
--- at : List String -> KVDecoder a -> KVDecoder a
--- at =
---     Debug.todo "work in progress"
---
---
--- index : Int -> KVDecoder a -> KVDecoder a
--- index =
---     Debug.todo "work in progress"
---
---
--- oneOf : List (KVDecoder a) -> KVDecoder a
--- oneOf =
---     Debug.todo "work in progress"
+--=== Map functions.
 
 
 map : (a -> value) -> KVDecoder a -> KVDecoder value
@@ -172,90 +143,74 @@ map fn decoder =
         Val valFn ->
             Val (valFn >> Result.map fn)
 
-        Field name innerDecoder ->
-            Field name (map fn innerDecoder)
-
-
-map2 : (a -> b -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder value
-map2 fn first second =
-    case ( first, second ) of
-        ( Val valFn1, Val valFn2 ) ->
-            Val (\a b -> Result.map2 fn (valFn1 a) (valFn2 b))
+        Object objectFn ->
+            Object (objectFn >> Result.map fn)
 
 
 
--- Field name innerDecoder ->
---     Field name (map2 fn innerDecoder second)
--- map3 : (a -> b -> c -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder value
--- map3 =
---     Debug.todo "work in progress"
---
---
--- map4 : (a -> b -> c -> d -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder d -> KVDecoder value
--- map4 =
---     Debug.todo "work in progress"
---
---
--- map5 : (a -> b -> c -> d -> e -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder d -> KVDecoder e -> KVDecoder value
--- map5 =
---     Debug.todo "work in progress"
---
---
--- map6 : (a -> b -> c -> d -> e -> f -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder d -> KVDecoder e -> KVDecoder f -> KVDecoder value
--- map6 =
---     Debug.todo "work in progress"
---
---
--- map7 : (a -> b -> c -> d -> e -> f -> g -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder d -> KVDecoder e -> KVDecoder f -> KVDecoder g -> KVDecoder value
--- map7 =
---     Debug.todo "work in progress"
---
---
--- map8 : (a -> b -> c -> d -> e -> f -> g -> h -> value) -> KVDecoder a -> KVDecoder b -> KVDecoder c -> KVDecoder d -> KVDecoder e -> KVDecoder f -> KVDecoder g -> KVDecoder h -> KVDecoder value
--- map8 =
---     Debug.todo "work in progress"
+--=== KV Pair Decoding.
 
 
 decodeKVPairs : KVDecoder a -> List ( String, String ) -> Result Error a
 decodeKVPairs decoder pairs =
-    Debug.todo "work in progress"
+    let
+        dict =
+            Dict.fromList pairs
+    in
+    case decoder of
+        Val val ->
+            Failure "Failed to interpret a list of (String, String) pairs as a simple value." "" |> Err
+
+        Object objectFn ->
+            objectFn dict
+
+
+
+--== Errors
 
 
 type Error
     = Failure String String
-    | MissingField
-
-
-
--- | Field String Error
--- | Index Int Error
--- | OneOf (List Error)
+    | MissingField String
 
 
 errorToString : Error -> String
-errorToString =
-    Debug.todo "work in progress"
+errorToString error =
+    case error of
+        Failure msg val ->
+            msg ++ " " ++ val
+
+        MissingField name ->
+            "The " ++ name ++ " field is required but is missing."
 
 
-succeed : a -> KVDecoder a
-succeed val =
-    Val (\_ -> Ok val)
+
+-- Example to test compilation against.
 
 
+type alias Example =
+    { field : Int
+    , inner : Inner
+    }
 
---
---
--- fail : String -> KVDecoder a
--- fail =
---     Debug.todo "work in progress"
--- andThen : (a -> KVDecoder b) -> KVDecoder a -> KVDecoder b
--- andThen =
---     Debug.todo "work in progress"
--- lazy : (() -> KVDecoder a) -> KVDecoder a
--- lazy =
---     Debug.todo "work in progress"
---
---
--- null : a -> KVDecoder a
--- null =
---     Debug.todo "work in progress"
+
+type alias Inner =
+    { a : String
+    , b : Maybe String
+    }
+
+
+exampleDecoder : KVDecoder Example
+exampleDecoder =
+    object Example
+        |> field "field" int
+        |> field "inner" innerDecoder
+        |> buildObject
+
+
+innerDecoder : KVDecoder Inner
+innerDecoder =
+    object Inner
+        |> field "a" string
+        |> optional "b" string
+        |> buildObject
