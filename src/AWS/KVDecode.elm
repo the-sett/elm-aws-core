@@ -1,28 +1,58 @@
 module AWS.KVDecode exposing
-    ( KVDecoder, string, bool, int, float
-    , object, field, optional, buildObject
-    , Error(..), errorToString
+    ( KVDecoder
     , decodeKVPairs
+    , string, bool, int, float
     , map
+    , ObjectDecoder, object, field, optional, buildObject
+    , Error(..), errorToString
     )
 
-{-| Blah.
+{-| KVDecode provides decoders to interpret lists of (String, String) into some
+Elm type.
 
-@docs KVDecoder, string, bool, int, float
+KVDecode is a counter-part to `AWS.KVEncode` but it has a cut down API. In
+particular there is no scheme to number items into lists, or to nest field names
+inside each other - only simple field names and a simple values are supported.
+The reason for this is that AWS services may return values in header fields,
+but only do this for relatively simple data models compared with the way in
+which more complex encodings can be used to pass in arguments.
 
-@docs object, field, optional, buildObject
 
-@docs Error, errorToString
+# Key-Value decoders.
 
+@docs KVDecoder
 @docs decodeKVPairs
 
+
+# Simple values.
+
+@docs string, bool, int, float
+
+
+# Mapping over Key-Value decoders.
+
 @docs map
+
+
+# Decoding into records.
+
+The term 'object' is used as the convention has been established by
+`miniBill/elm-codec`.
+
+@docs ObjectDecoder, object, field, optional, buildObject
+
+
+# Error reporting when decoding fails.
+
+@docs Error, errorToString
 
 -}
 
 import Dict exposing (Dict)
 
 
+{-| The type of Key-Value decoders.
+-}
 type KVDecoder a
     = Val (String -> Result Error a)
     | Object (Dict String String -> Result Error a)
@@ -35,7 +65,7 @@ string =
     Val (\val -> Ok val)
 
 
-{-| Decodes a bool value from "true" or "false".
+{-| Decodes a `Bool`value from "true" or "false".
 -}
 bool : KVDecoder Bool
 bool =
@@ -53,6 +83,9 @@ bool =
         )
 
 
+{-| Decodes an `Int` value from a `String` or fails if the string is not an
+integer.
+-}
 int : KVDecoder Int
 int =
     Val
@@ -66,6 +99,9 @@ int =
         )
 
 
+{-| Decodes an `Float` value from a `String` or fails if the string is not a
+number.
+-}
 float : KVDecoder Float
 float =
     Val
@@ -83,15 +119,21 @@ float =
 --=== Records
 
 
+{-| A decoder of fields of named records.
+-}
 type ObjectDecoder a
     = ObjectDecoder (Dict String String -> Result Error a)
 
 
+{-| Creates an object decoder from a record constructor.
+-}
 object : a -> ObjectDecoder a
 object ctor =
     Ok ctor |> always |> ObjectDecoder
 
 
+{-| Adds a mandatory field to an `ObjectDecoder`.
+-}
 field : String -> KVDecoder f -> ObjectDecoder (f -> a) -> ObjectDecoder a
 field name fdecoder (ObjectDecoder innerFieldFn) =
     case fdecoder of
@@ -110,6 +152,8 @@ field name fdecoder (ObjectDecoder innerFieldFn) =
             ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict))
 
 
+{-| Adds an optional field to an `ObjectDecoder`.
+-}
 optional : String -> KVDecoder f -> ObjectDecoder (Maybe f -> a) -> ObjectDecoder a
 optional name fdecoder (ObjectDecoder innerFieldFn) =
     case fdecoder of
@@ -128,6 +172,8 @@ optional name fdecoder (ObjectDecoder innerFieldFn) =
             ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict |> Result.map Just))
 
 
+{-| Turns an `ObjectDecoder` into a `KVDecoder`.
+-}
 buildObject : ObjectDecoder a -> KVDecoder a
 buildObject (ObjectDecoder fieldFn) =
     Object fieldFn
@@ -137,6 +183,8 @@ buildObject (ObjectDecoder fieldFn) =
 --=== Map functions.
 
 
+{-| Maps over `KVDecoder`
+-}
 map : (a -> value) -> KVDecoder a -> KVDecoder value
 map fn decoder =
     case decoder of
@@ -151,6 +199,12 @@ map fn decoder =
 --=== KV Pair Decoding.
 
 
+{-| Parses a list of Key-Value pairs as a strings into the Elm type described
+by the decoder.
+
+Errors may result if the decoder fails to match the data.
+
+-}
 decodeKVPairs : KVDecoder a -> List ( String, String ) -> Result Error a
 decodeKVPairs decoder pairs =
     let
@@ -169,11 +223,15 @@ decodeKVPairs decoder pairs =
 --== Errors
 
 
+{-| Describes the possible ways the Key-Value decoding can fail.
+-}
 type Error
     = Failure String String
     | MissingField String
 
 
+{-| Converts an `Error` to `String` describing the error.
+-}
 errorToString : Error -> String
 errorToString error =
     case error of
