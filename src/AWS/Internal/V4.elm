@@ -9,7 +9,7 @@ module AWS.Internal.V4 exposing (sign)
 import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
 import Crypto.HMAC exposing (sha256)
@@ -45,10 +45,10 @@ sign service creds date req =
                     Http.NetworkError |> Err
 
                 Http.BadStatus_ metadata body ->
-                    req.decoder BadStatus metadata body
+                    req.decoder BadStatus_ metadata body
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder GoodStatus metadata body
+                    req.decoder GoodStatus_ metadata body
 
         resolver =
             Http.stringResolver responseDecoder

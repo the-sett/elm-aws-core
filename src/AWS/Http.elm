@@ -5,6 +5,7 @@ module AWS.Http exposing
     , Body, MimeType
     , emptyBody, stringBody, jsonBody
     , addHeaders, addQuery
+    , ResponseDecoder, HttpStatus(..)
     , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
     )
 
@@ -35,6 +36,7 @@ module AWS.Http exposing
 
 # Build decoders to interpret the response.
 
+@docs ResponseDecoder, HttpStatus
 @docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
 
 -}
@@ -42,7 +44,7 @@ module AWS.Http exposing
 import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
-import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
@@ -229,6 +231,33 @@ addQuery query req =
 --=== Build decoders to interpret the response.
 
 
+{-| Decoders that interpret responses.
+-}
+type alias ResponseDecoder a =
+    AWS.Internal.Request.ResponseDecoder a
+
+
+{-| The HTTP response code type according to how `Elm.Http` classifies responses.
+
+A code from 200 to less than 300 is considered 'Good' and any other code is
+considered 'Bad'.
+
+-}
+type HttpStatus
+    = GoodStatus
+    | BadStatus
+
+
+httpStatus : ResponseStatus -> HttpStatus
+httpStatus status =
+    case status of
+        GoodStatus_ ->
+            GoodStatus
+
+        BadStatus_ ->
+            BadStatus
+
+
 {-| A full decoder for the response that can look at the status code, metadata
 including headers and so on. The body is presented as a `String` for parsing.
 
@@ -239,7 +268,7 @@ this will be mapped onto `Http.BadBody` when present.
 fullDecoder : (HttpStatus -> Metadata -> String -> Result String a) -> ResponseDecoder a
 fullDecoder decodeFn =
     \status metadata body ->
-        case decodeFn status metadata body of
+        case decodeFn (httpStatus status) metadata body of
             Ok val ->
                 Ok val
 
@@ -257,7 +286,7 @@ Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
 jsonFullDecoder : (HttpStatus -> Metadata -> Decoder a) -> ResponseDecoder a
 jsonFullDecoder decodeFn =
     \status metadata body ->
-        case Decode.decodeString (decodeFn status metadata) body of
+        case Decode.decodeString (decodeFn (httpStatus status) metadata) body of
             Ok val ->
                 Ok val
 
@@ -281,7 +310,7 @@ stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
 stringBodyDecoder decodeFn =
     \status metadata body ->
         case status of
-            GoodStatus ->
+            GoodStatus_ ->
                 case decodeFn body of
                     Ok val ->
                         Ok val
@@ -289,7 +318,7 @@ stringBodyDecoder decodeFn =
                     Err err ->
                         Http.BadBody err |> Err
 
-            BadStatus ->
+            BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err
 
 
@@ -309,7 +338,7 @@ jsonBodyDecoder : Decoder a -> ResponseDecoder a
 jsonBodyDecoder decodeFn =
     \status metadata body ->
         case status of
-            GoodStatus ->
+            GoodStatus_ ->
                 case Decode.decodeString decodeFn body of
                     Ok val ->
                         Ok val
@@ -317,7 +346,7 @@ jsonBodyDecoder decodeFn =
                     Err err ->
                         Http.BadBody (Decode.errorToString err) |> Err
 
-            BadStatus ->
+            BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err
 
 
@@ -336,10 +365,10 @@ constantDecoder : a -> ResponseDecoder a
 constantDecoder val =
     \status metadata _ ->
         case status of
-            GoodStatus ->
+            GoodStatus_ ->
                 Ok val
 
-            BadStatus ->
+            BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err
 
 
