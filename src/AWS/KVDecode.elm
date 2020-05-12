@@ -7,7 +7,7 @@ module AWS.KVDecode exposing
     , Error(..), errorToString
     )
 
-{-| KVDecode provides decoders to interpret lists of (String, String) into some
+{-| KVDecode provides decoders to interpret lists of `(String, String)` into some
 Elm type.
 
 KVDecode is a counter-part to `AWS.KVEncode` but it has a cut down API. In

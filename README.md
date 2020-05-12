@@ -54,4 +54,7 @@ this package as a foundational element.
   requests.
   - [AWS.KVEncode](AWS-KVEncode): Utility for helping to encode Elm data into
   key-valued string pairs, for setting query parameters or header fields.
+  - [AWS.KVDecode](AWS-KVDecode): Utility for decoding key-values string pairs
+  into Elm data. Simpler than `KVEncode` as only needed for interpreting fairly
+  simple response headers.
   - [AWS.Uri](AWS-Uri): Utility for URI encoding specific to how AWS does it.
