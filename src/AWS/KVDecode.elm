@@ -205,18 +205,14 @@ by the decoder.
 Errors may result if the decoder fails to match the data.
 
 -}
-decodeKVPairs : KVDecoder a -> List ( String, String ) -> Result Error a
+decodeKVPairs : KVDecoder a -> Dict String String -> Result Error a
 decodeKVPairs decoder pairs =
-    let
-        dict =
-            Dict.fromList pairs
-    in
     case decoder of
         Val val ->
             Failure "Failed to interpret a list of (String, String) pairs as a simple value." "" |> Err
 
         Object objectFn ->
-            objectFn dict
+            objectFn pairs
 
 
 
