@@ -1,10 +1,17 @@
-module AWS.Core.Signers.V4 exposing (addAuthorization, addSessionToken, algorithm, authorization, credentialScope, filterHeaders, formatPosix, headers, sign, signature, stringToSign)
+module AWS.Internal.V4 exposing (sign)
 
-import AWS.Core.Body exposing (Body, explicitMimetype)
-import AWS.Core.Credentials as Credentials exposing (Credentials)
-import AWS.Core.Request exposing (Unsigned)
-import AWS.Core.Service as Service exposing (Service)
-import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+{-| V4 request signing implementation.
+
+<http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html>
+
+-}
+
+import AWS.Credentials as Credentials exposing (Credentials)
+import AWS.Internal.Body exposing (Body, explicitMimetype)
+import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Service as Service exposing (Service)
+import AWS.Internal.UrlBuilder
 import Crypto.HMAC exposing (sha256)
 import Http
 import Iso8601
@@ -16,15 +23,13 @@ import Word.Bytes as Bytes
 import Word.Hex as Hex
 
 
-
--- http://docs.aws.amazon.com/waf/latest/developerguide/authenticating-requests.html
-
-
+{-| Prepares a request and signs it with the V4 signing scheme.
+-}
 sign :
     Service
     -> Credentials
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> Task Http.Error a
 sign service creds date req =
     let
@@ -39,20 +44,14 @@ sign service creds date req =
                 Http.NetworkError_ ->
                     Http.NetworkError |> Err
 
-                Http.BadStatus_ metadata _ ->
-                    Http.BadStatus metadata.statusCode |> Err
+                Http.BadStatus_ metadata body ->
+                    req.decoder BadStatus metadata body
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder body
-                        |> Result.mapError Http.BadBody
+                    req.decoder GoodStatus metadata body
 
         resolver =
-            case req.responseParser of
-                Just parser ->
-                    Http.stringResolver parser
-
-                Nothing ->
-                    Http.stringResolver responseDecoder
+            Http.stringResolver responseDecoder
     in
     Http.task
         { method = req.method
@@ -61,8 +60,8 @@ sign service creds date req =
                 |> addAuthorization service creds date req
                 |> addSessionToken creds
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Core.Request.url service req
-        , body = AWS.Core.Body.toHttp req.body
+        , url = AWS.Internal.UrlBuilder.url service req
+        , body = AWS.Internal.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing
         }
@@ -94,7 +93,7 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Content-Type", Service.jsonContentType service ) ]
+            [ ( "Content-Type", Service.contentType service ) ]
         ]
 
 
@@ -112,8 +111,7 @@ addSessionToken :
     -> List ( String, String )
     -> List ( String, String )
 addSessionToken creds headersList =
-    creds
-        |> Credentials.sessionToken
+    creds.sessionToken
         |> Maybe.map
             (\token ->
                 ( "x-amz-security-token", token ) :: headersList
@@ -125,7 +123,7 @@ addAuthorization :
     Service
     -> Credentials
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> List ( String, String )
     -> List ( String, String )
 addAuthorization service creds date req headersList =
@@ -158,7 +156,7 @@ authorization :
     Credentials
     -> Posix
     -> Service
-    -> Unsigned a
+    -> Request a
     -> List ( String, String )
     -> String
 authorization creds date service req rawHeaders =
@@ -168,13 +166,13 @@ authorization creds date service req rawHeaders =
             filterHeaders [ "content-type", "accept" ] rawHeaders
 
         canon =
-            canonical (Service.signer service) req.method req.path filteredHeaders req.query req.body
+            canonical service.signer req.method req.path filteredHeaders req.query req.body
 
         scope =
             credentialScope date creds service
     in
     [ "AWS4-HMAC-SHA256 Credential="
-        ++ Credentials.accessKeyId creds
+        ++ creds.accessKeyId
         ++ "/"
         ++ scope
     , "SignedHeaders="
@@ -189,7 +187,7 @@ credentialScope : Posix -> Credentials -> Service -> String
 credentialScope date creds service =
     [ date |> formatPosix |> String.slice 0 8
     , Service.region service
-    , Service.endpointPrefix service
+    , service.endpointPrefix
     , "aws4_request"
     ]
         |> String.join "/"
@@ -204,13 +202,12 @@ signature creds service date toSign =
                     key
                     (Bytes.fromUTF8 message)
     in
-    creds
-        |> Credentials.secretAccessKey
+    creds.secretAccessKey
         |> (++) "AWS4"
         |> Bytes.fromUTF8
         |> digest (formatPosix date |> String.slice 0 8)
         |> digest (Service.region service)
-        |> digest (Service.endpointPrefix service)
+        |> digest service.endpointPrefix
         |> digest "aws4_request"
         |> digest toSign
         |> Hex.fromByteList

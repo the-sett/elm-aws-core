@@ -1,9 +1,13 @@
-module AWS.Core.Signers.Unsigned exposing (filterHeaders, formatPosix, headers, prepare)
+module AWS.Internal.Unsigned exposing (prepare)
 
-import AWS.Core.Body exposing (Body, explicitMimetype)
-import AWS.Core.Request exposing (Unsigned)
-import AWS.Core.Service as Service exposing (Service)
-import AWS.Core.Signers.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+{-| Unsigned request implementation.
+-}
+
+import AWS.Internal.Body exposing (Body, explicitMimetype)
+import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Internal.Request exposing (HttpStatus(..), Request, ResponseDecoder)
+import AWS.Internal.Service as Service exposing (Service)
+import AWS.Internal.UrlBuilder
 import Http
 import Iso8601
 import Json.Decode as Decode
@@ -17,7 +21,7 @@ import Time exposing (Posix)
 prepare :
     Service
     -> Posix
-    -> Unsigned a
+    -> Request a
     -> Task Http.Error a
 prepare service date req =
     let
@@ -32,28 +36,22 @@ prepare service date req =
                 Http.NetworkError_ ->
                     Http.NetworkError |> Err
 
-                Http.BadStatus_ metadata _ ->
-                    Http.BadStatus metadata.statusCode |> Err
+                Http.BadStatus_ metadata body ->
+                    req.decoder BadStatus metadata body
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder body
-                        |> Result.mapError Http.BadBody
+                    req.decoder GoodStatus metadata body
 
         resolver =
-            case req.responseParser of
-                Just parser ->
-                    Http.stringResolver parser
-
-                Nothing ->
-                    Http.stringResolver responseDecoder
+            Http.stringResolver responseDecoder
     in
     Http.task
         { method = req.method
         , headers =
             headers service date req.body req.headers
                 |> List.map (\( key, val ) -> Http.header key val)
-        , url = AWS.Core.Request.url service req
-        , body = AWS.Core.Body.toHttp req.body
+        , url = AWS.Internal.UrlBuilder.url service req
+        , body = AWS.Internal.Body.toHttp req.body
         , resolver = resolver
         , timeout = Nothing
         }
@@ -80,7 +78,7 @@ headers service date body extraHeaders =
             []
 
           else
-            [ ( "Content-Type", Service.jsonContentType service ) ]
+            [ ( "Content-Type", Service.contentType service ) ]
         ]
 
 

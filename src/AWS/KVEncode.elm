@@ -1,4 +1,4 @@
-module AWS.Core.KVEncode exposing
+module AWS.KVEncode exposing
     ( KVPairs, KVField
     , encode
     , int, float, string, bool

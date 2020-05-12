@@ -1,8 +1,9 @@
-module AWS.Core.Signers.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalQueryString, canonicalRaw, canonicalUri, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
+module AWS.Internal.Canonical exposing (canonical, canonicalHeaders, canonicalPayload, canonicalRaw, canonicalUri, canonicalUrlBuilder, encode2Tuple, joinHeader, mergeSameHeaders, normalizeHeader, resolveRelativePath, signedHeaders)
 
-import AWS.Core.Body exposing (Body)
-import AWS.Core.Encode
-import AWS.Core.Service as Service exposing (Service, Signer(..))
+import AWS.Config exposing (Signer(..))
+import AWS.Internal.Body exposing (Body)
+import AWS.Internal.Service as Service exposing (Service)
+import AWS.Uri
 import Crypto.Hash exposing (sha256)
 import Regex
 
@@ -21,7 +22,7 @@ canonicalRaw : Signer -> String -> String -> List ( String, String ) -> List ( S
 canonicalRaw signer method path headers params body =
     [ String.toUpper method
     , canonicalUri signer path
-    , canonicalQueryString params
+    , canonicalUrlBuilder params
     , canonicalHeaders headers
     , ""
     , signedHeaders headers
@@ -57,12 +58,12 @@ canonicalUri signer path =
                     |> Regex.replace (Regex.fromString "/{2,}" |> Maybe.withDefault Regex.never) (\_ -> "/")
                     |> resolveRelativePath
                     |> String.split "/"
-                    |> List.map AWS.Core.Encode.uri
+                    |> List.map AWS.Uri.percentEncode
                     |> String.join "/"
 
 
-canonicalQueryString : List ( String, String ) -> String
-canonicalQueryString params =
+canonicalUrlBuilder : List ( String, String ) -> String
+canonicalUrlBuilder params =
     params
         |> List.sort
         |> List.map (encode2Tuple "=")
@@ -90,7 +91,7 @@ signedHeaders headers =
 
 canonicalPayload : Body -> String
 canonicalPayload =
-    AWS.Core.Body.toString >> sha256
+    AWS.Internal.Body.toString >> sha256
 
 
 
@@ -152,4 +153,4 @@ joinHeader ( key, val ) =
 
 encode2Tuple : String -> ( String, String ) -> String
 encode2Tuple separator ( a, b ) =
-    [ AWS.Core.Encode.uri a, AWS.Core.Encode.uri b ] |> String.join separator
+    [ AWS.Uri.percentEncode a, AWS.Uri.percentEncode b ] |> String.join separator
