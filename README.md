@@ -2,27 +2,29 @@
 - @rupertlssmith on https://elmlang.slack.com
 - @rupert on https://discourse.elm-lang.org
 
-**Status** - 08-May-2020 - Published as version 6.0.0
+**Status** - 11-May-2020 - Published as version 6.0.0
 
 The API has been redesigned. The intermediate `.Core.` module name has been
 removed. The old `Encode` and `Decode` modules were dropped as not very useful
 and poorly designed.
 
 A new `KVEncode` module has been introduced to help with building headers and
-query parameters.
+query parameters. A `KVDecoder` module has been introduced to help decoding
+response headers, it is simpler than `KVEncode` as less elaborate encoding
+schemes are needed.
 
 AWS URI encoding was taken from the old `Encode` module and put in its own `Uri`
 module.
 
-ServiceConfig and Credentials were made into type aliases instead of opaque
+`ServiceConfig` and `Credentials` were made into type aliases instead of opaque
 custom types. This mean the accessor functions could be dropped. I don't see
 any reason to make these things opaque, there is no advantage in hiding
 the implementation.
 
-Service building was rationalized to remove some oddities. The ServiceConfig is
-now a simple record and easy to understand. The defaulting is explained in the
-docs. The defaulting happens behind the scenes when turning a config into a
-Service.
+`Service` building was rationalized to remove some oddities. The `ServiceConfig`
+is now a simple record and easy to understand. The defaulting is explained in
+the docs. The defaulting happens behind the scenes when turning a config into a
+`Service`.
 
 An amount of unused code was deleted. The API is now leaner and cleaner.
 
