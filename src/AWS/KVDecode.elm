@@ -225,6 +225,35 @@ map fn decoder =
             DecodeFail msg
 
 
+andThen : (a -> KVDecoder b) -> KVDecoder a -> KVDecoder b
+andThen fn decoder =
+    case decoder of
+        Val valFn ->
+            Val
+                (\str ->
+                    case valFn str |> Result.map fn of
+                        Ok (Val innerFn) ->
+                            innerFn str
+
+                        _ ->
+                            Failure "fail" |> Err
+                )
+
+        Object objectFn ->
+            Object
+                (\dict ->
+                    case objectFn dict |> Result.map fn of
+                        Ok (Object innerFn) ->
+                            innerFn dict
+
+                        _ ->
+                            Failure "fail" |> Err
+                )
+
+        _ ->
+            DecodeFail "fail"
+
+
 
 --=== KV Pair Decoding.
 
