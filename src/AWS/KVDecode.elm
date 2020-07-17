@@ -2,6 +2,7 @@ module AWS.KVDecode exposing
     ( KVDecoder
     , decodeKVPairs
     , string, bool, int, float
+    , succeed, fail
     , map
     , ObjectDecoder, object, field, optional, buildObject
     , Error(..), errorToString
@@ -27,6 +28,11 @@ which more complex encodings can be used to pass in arguments.
 # Simple values.
 
 @docs string, bool, int, float
+
+
+# Succeed or fail.
+
+@docs succeed, fail
 
 
 # Mapping over Key-Value decoders.
@@ -56,6 +62,7 @@ import Dict exposing (Dict)
 type KVDecoder a
     = Val (String -> Result Error a)
     | Object (Dict String String -> Result Error a)
+    | DecodeFail String
 
 
 {-| Decodes a string value.
@@ -79,7 +86,7 @@ bool =
                     Ok False
 
                 _ ->
-                    Failure "Failed to interpret as a Bool the value: " val |> Err
+                    FailureWithVal "Failed to interpret as a Bool the value: " val |> Err
         )
 
 
@@ -95,7 +102,7 @@ int =
                     Ok intVal
 
                 Nothing ->
-                    Failure "Failed to interpret as an Int the value: " val |> Err
+                    FailureWithVal "Failed to interpret as an Int the value: " val |> Err
         )
 
 
@@ -111,8 +118,22 @@ float =
                     Ok floatVal
 
                 Nothing ->
-                    Failure "Failed to interpret as a Float the value: " val |> Err
+                    FailureWithVal "Failed to interpret as a Float the value: " val |> Err
         )
+
+
+{-| Succeed with a decoder for a specified value.
+-}
+succeed : a -> KVDecoder a
+succeed val =
+    Val (\_ -> Ok val)
+
+
+{-| Make the decoder fail with the specified error message.
+-}
+fail : String -> KVDecoder a
+fail msg =
+    DecodeFail msg
 
 
 
@@ -151,6 +172,9 @@ field name fdecoder (ObjectDecoder innerFieldFn) =
         Object objectFn ->
             ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict))
 
+        DecodeFail msg ->
+            ObjectDecoder (\_ -> Failure msg |> Err)
+
 
 {-| Adds an optional field to an `ObjectDecoder`.
 -}
@@ -170,6 +194,9 @@ optional name fdecoder (ObjectDecoder innerFieldFn) =
 
         Object objectFn ->
             ObjectDecoder (\dict -> Result.map2 (\f x -> f x) (innerFieldFn dict) (objectFn dict |> Result.map Just))
+
+        DecodeFail msg ->
+            ObjectDecoder (\_ -> Failure msg |> Err)
 
 
 {-| Turns an `ObjectDecoder` into a `KVDecoder`.
@@ -194,6 +221,9 @@ map fn decoder =
         Object objectFn ->
             Object (objectFn >> Result.map fn)
 
+        DecodeFail msg ->
+            DecodeFail msg
+
 
 
 --=== KV Pair Decoding.
@@ -209,10 +239,13 @@ decodeKVPairs : KVDecoder a -> Dict String String -> Result Error a
 decodeKVPairs decoder pairs =
     case decoder of
         Val val ->
-            Failure "Failed to interpret a list of (String, String) pairs as a simple value." "" |> Err
+            FailureWithVal "Failed to interpret a list of (String, String) pairs as a simple value." "" |> Err
 
         Object objectFn ->
             objectFn pairs
+
+        DecodeFail msg ->
+            Failure msg |> Err
 
 
 
@@ -222,7 +255,8 @@ decodeKVPairs decoder pairs =
 {-| Describes the possible ways the Key-Value decoding can fail.
 -}
 type Error
-    = Failure String String
+    = Failure String
+    | FailureWithVal String String
     | MissingField String
 
 
@@ -231,7 +265,10 @@ type Error
 errorToString : Error -> String
 errorToString error =
     case error of
-        Failure msg val ->
+        Failure msg ->
+            msg
+
+        FailureWithVal msg val ->
             msg ++ " " ++ val
 
         MissingField name ->
