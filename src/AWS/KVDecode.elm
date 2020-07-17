@@ -239,8 +239,11 @@ andThen fn decoder =
                         Ok (Val innerFn) ->
                             innerFn str
 
-                        _ ->
-                            Failure "fail" |> Err
+                        Ok _ ->
+                            Failure "Cannot pass a value decoder through an object decoder." |> Err
+
+                        Err err ->
+                            Err err
                 )
 
         Object objectFn ->
@@ -250,8 +253,11 @@ andThen fn decoder =
                         Ok (Object innerFn) ->
                             innerFn dict
 
-                        _ ->
-                            Failure "fail" |> Err
+                        Ok _ ->
+                            Failure "Cannot pass an object decoder through a value decoder." |> Err
+
+                        Err err ->
+                            Err err
                 )
 
         _ ->
