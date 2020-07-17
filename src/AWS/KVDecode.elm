@@ -3,7 +3,7 @@ module AWS.KVDecode exposing
     , decodeKVPairs
     , string, bool, int, float
     , succeed, fail
-    , map
+    , map, andThen
     , ObjectDecoder, object, field, optional, buildObject
     , Error(..), errorToString
     )
@@ -37,7 +37,7 @@ which more complex encodings can be used to pass in arguments.
 
 # Mapping over Key-Value decoders.
 
-@docs map
+@docs map, andThen
 
 
 # Decoding into records.
@@ -225,6 +225,8 @@ map fn decoder =
             DecodeFail msg
 
 
+{-| Create decoders that depend on previous results.
+-}
 andThen : (a -> KVDecoder b) -> KVDecoder a -> KVDecoder b
 andThen fn decoder =
     case decoder of
