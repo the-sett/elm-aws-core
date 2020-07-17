@@ -225,6 +225,10 @@ map fn decoder =
             DecodeFail msg
 
 
+
+-- Compiles but hard to understand, add some tests to check.
+
+
 andThen : (a -> KVDecoder b) -> KVDecoder a -> KVDecoder b
 andThen fn decoder =
     case decoder of
