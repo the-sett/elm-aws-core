@@ -39,8 +39,8 @@ import Json.Decode exposing (Decoder)
 --     | BadBody String -- Overloaded. Should introduce custom error type?
 
 
-type alias ResponseDecoder a =
-    ResponseStatus -> Metadata -> String -> Result Http.Error a
+type alias ResponseDecoder err a =
+    ResponseStatus -> Metadata -> String -> Result Http.Error (Result err a)
 
 
 type ResponseStatus
@@ -48,14 +48,20 @@ type ResponseStatus
     | BadStatus_
 
 
-type alias Request a =
+type alias Request err a =
     { name : String
     , method : String
     , path : String
     , body : Body
     , headers : List ( String, String )
     , query : List ( String, String )
-    , decoder : ResponseDecoder a
+    , decoder : ResponseDecoder err a
+    }
+
+
+type alias RawError =
+    { type_ : String
+    , message : String
     }
 
 
@@ -64,8 +70,8 @@ unsigned :
     -> String
     -> String
     -> Body
-    -> ResponseDecoder a
-    -> Request a
+    -> ResponseDecoder err a
+    -> Request err a
 unsigned name method uri body decoder =
     { name = name
     , method = method

@@ -14,7 +14,7 @@ This consists of combing together the host name, path and query string to form
 the complete URL.
 
 -}
-url : Service -> Request a -> String
+url : Service -> Request err a -> String
 url service { path, query } =
     "https://"
         ++ Service.host service

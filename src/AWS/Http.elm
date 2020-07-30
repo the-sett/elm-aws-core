@@ -67,11 +67,11 @@ import Time exposing (Posix)
 send :
     Service
     -> Credentials
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task Http.Error (Result err a)
 send service credentials req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -82,7 +82,7 @@ send service credentials req =
                 _ ->
                     innerReq
 
-        signWithTimestamp : Request a -> Posix -> Task Http.Error a
+        signWithTimestamp : Request err a -> Posix -> Task Http.Error (Result err a)
         signWithTimestamp innerReq posix =
             case service.signer of
                 SignV4 ->
@@ -98,11 +98,11 @@ send service credentials req =
 -}
 sendUnsigned :
     Service
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task Http.Error (Result err a)
 sendUnsigned service req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -113,7 +113,7 @@ sendUnsigned service req =
                 _ ->
                     innerReq
 
-        withTimestamp : Request a -> Posix -> Task Http.Error a
+        withTimestamp : Request err a -> Posix -> Task Http.Error (Result err a)
         withTimestamp innerReq posix =
             Unsigned.prepare service posix innerReq
     in
@@ -126,8 +126,8 @@ sendUnsigned service req =
 
 {-| Holds an unsigned AWS HTTP request.
 -}
-type alias Request a =
-    AWS.Internal.Request.Request a
+type alias Request err a =
+    AWS.Internal.Request.Request err a
 
 
 {-| HTTP request methods.
@@ -154,8 +154,8 @@ request :
     -> Method
     -> Path
     -> Body
-    -> ResponseDecoder a
-    -> Request a
+    -> ResponseDecoder err a
+    -> Request err a
 request name method path body decoder =
     AWS.Internal.Request.unsigned name (methodToString method) path body decoder
 
@@ -215,7 +215,7 @@ stringBody =
 See the `AWS.KVEncode` for encoder functions to build the headers with.
 
 -}
-addHeaders : List ( String, String ) -> Request a -> Request a
+addHeaders : List ( String, String ) -> Request err a -> Request err a
 addHeaders headers req =
     { req | headers = List.append req.headers headers }
 
@@ -225,7 +225,7 @@ addHeaders headers req =
 See the `AWS.KVEncode` for encoder functions to build the query parameters with.
 
 -}
-addQuery : List ( String, String ) -> Request a -> Request a
+addQuery : List ( String, String ) -> Request err a -> Request err a
 addQuery query req =
     { req | query = List.append req.query query }
 
@@ -236,8 +236,8 @@ addQuery query req =
 
 {-| Decoders that interpret responses.
 -}
-type alias ResponseDecoder a =
-    AWS.Internal.Request.ResponseDecoder a
+type alias ResponseDecoder err a =
+    AWS.Internal.Request.ResponseDecoder err a
 
 
 {-| The HTTP response code type according to how `Elm.Http` classifies responses.
@@ -268,7 +268,7 @@ It is possible to report an error as a String when interpreting the response, an
 this will be mapped onto `Http.BadBody` when present.
 
 -}
-fullDecoder : (HttpStatus -> Metadata -> String -> Result String a) -> ResponseDecoder a
+fullDecoder : (HttpStatus -> Metadata -> String -> Result err a) -> ResponseDecoder err a
 fullDecoder decodeFn =
     \status metadata body ->
         case decodeFn (httpStatus status) metadata body of
@@ -286,7 +286,7 @@ Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
 `Decode.errorToString`.
 
 -}
-jsonFullDecoder : (HttpStatus -> Metadata -> Decoder a) -> ResponseDecoder a
+jsonFullDecoder : (HttpStatus -> Metadata -> Decoder (Result err a)) -> ResponseDecoder err a
 jsonFullDecoder decodeFn =
     \status metadata body ->
         case Decode.decodeString (decodeFn (httpStatus status) metadata) body of
@@ -309,14 +309,14 @@ the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
 one of the 'full' decoders.
 
 -}
-stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
+stringBodyDecoder : (String -> Result String a) -> ResponseDecoder Never a
 stringBodyDecoder decodeFn =
     \status metadata body ->
         case status of
             GoodStatus_ ->
                 case decodeFn body of
                     Ok val ->
-                        Ok val
+                        Ok val |> Ok
 
                     Err err ->
                         Http.BadBody err |> Err
@@ -337,14 +337,14 @@ the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
 one of the 'full' decoders.
 
 -}
-jsonBodyDecoder : Decoder a -> ResponseDecoder a
+jsonBodyDecoder : Decoder a -> ResponseDecoder Never a
 jsonBodyDecoder decodeFn =
     \status metadata body ->
         case status of
             GoodStatus_ ->
                 case Decode.decodeString decodeFn body of
                     Ok val ->
-                        Ok val
+                        Ok val |> Ok
 
                     Err err ->
                         Http.BadBody (Decode.errorToString err) |> Err
@@ -364,12 +364,12 @@ the body. If you need to handle things that Elm HTTP regards as BadStatus\_, use
 one of the 'full' decoders.
 
 -}
-constantDecoder : a -> ResponseDecoder a
+constantDecoder : a -> ResponseDecoder Never a
 constantDecoder val =
     \status metadata _ ->
         case status of
             GoodStatus_ ->
-                Ok val
+                Ok val |> Ok
 
             BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err

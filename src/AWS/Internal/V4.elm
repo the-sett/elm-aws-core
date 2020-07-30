@@ -29,8 +29,8 @@ sign :
     Service
     -> Credentials
     -> Posix
-    -> Request a
-    -> Task Http.Error a
+    -> Request err a
+    -> Task Http.Error (Result err a)
 sign service creds date req =
     let
         responseDecoder response =
@@ -123,7 +123,7 @@ addAuthorization :
     Service
     -> Credentials
     -> Posix
-    -> Request a
+    -> Request err a
     -> List ( String, String )
     -> List ( String, String )
 addAuthorization service creds date req headersList =
@@ -156,7 +156,7 @@ authorization :
     Credentials
     -> Posix
     -> Service
-    -> Request a
+    -> Request err a
     -> List ( String, String )
     -> String
 authorization creds date service req rawHeaders =
