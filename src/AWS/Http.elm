@@ -39,6 +39,9 @@ module AWS.Http exposing
 @docs ResponseDecoder, HttpStatus
 @docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
 
+
+# Error reporting.
+
 -}
 
 import AWS.Config exposing (Protocol(..), Signer(..))
@@ -370,6 +373,39 @@ constantDecoder val =
 
             BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err
+
+
+
+--=== Error reporting.
+
+
+{-| AWS reports errors at the API level as 'exceptions' with a 400 error code.
+The format of these errors is always the same. An example in JSON is:
+
+    { "\_\_type":"PasswordResetRequiredException"
+    , "message":"Password reset required for the user"
+    }
+
+The raw error from AWS is placed in the `raw` field. An interpretation of this
+by your error handler will be placed in the `error` field.
+
+-}
+type alias AWSError a =
+    { error : a
+    , raw : ErrorResponse
+    }
+
+
+{-| The raw error fields returned from an AWS API call.
+-}
+type alias ErrorResponse =
+    { type_ : String
+    , message : String
+    }
+
+
+
+--=== Helper functions.
 
 
 methodToString : Method -> String
