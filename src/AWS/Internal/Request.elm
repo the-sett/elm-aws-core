@@ -48,13 +48,14 @@ type ResponseStatus
     | BadStatus_
 
 
-type alias Request a =
+type alias Request err a =
     { name : String
     , method : String
     , path : String
     , body : Body
     , headers : List ( String, String )
     , query : List ( String, String )
+    , errDecoder : Decoder err
     , decoder : ResponseDecoder a
     }
 
@@ -64,14 +65,16 @@ unsigned :
     -> String
     -> String
     -> Body
+    -> Decoder err
     -> ResponseDecoder a
-    -> Request a
-unsigned name method uri body decoder =
+    -> Request err a
+unsigned name method uri body errDecoder decoder =
     { name = name
     , method = method
     , path = uri
     , body = body
     , headers = []
     , query = []
+    , errDecoder = errDecoder
     , decoder = decoder
     }

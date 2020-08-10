@@ -21,7 +21,7 @@ import Time exposing (Posix)
 prepare :
     Service
     -> Posix
-    -> Request a
+    -> Request err a
     -> Task Http.Error a
 prepare service date req =
     let
