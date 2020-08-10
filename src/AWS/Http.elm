@@ -64,11 +64,11 @@ import Time exposing (Posix)
 send :
     Service
     -> Credentials
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task (Error err) a
 send service credentials req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -79,7 +79,7 @@ send service credentials req =
                 _ ->
                     innerReq
 
-        signWithTimestamp : Request a -> Posix -> Task Http.Error a
+        signWithTimestamp : Request err a -> Posix -> Task (Error err) a
         signWithTimestamp innerReq posix =
             case service.signer of
                 SignV4 ->
@@ -95,11 +95,11 @@ send service credentials req =
 -}
 sendUnsigned :
     Service
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task (Error err) a
 sendUnsigned service req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -110,7 +110,7 @@ sendUnsigned service req =
                 _ ->
                     innerReq
 
-        withTimestamp : Request a -> Posix -> Task Http.Error a
+        withTimestamp : Request err a -> Posix -> Task (Error err) a
         withTimestamp innerReq posix =
             Unsigned.prepare service posix innerReq
     in
@@ -123,8 +123,8 @@ sendUnsigned service req =
 
 {-| Holds an unsigned AWS HTTP request.
 -}
-type alias Request a =
-    AWS.Internal.Request.Request a
+type alias Request err a =
+    AWS.Internal.Request.Request err a
 
 
 {-| HTTP request methods.
@@ -152,7 +152,7 @@ request :
     -> Path
     -> Body
     -> ResponseDecoder a
-    -> Request a
+    -> Request err a
 request name method path body decoder =
     AWS.Internal.Request.unsigned name (methodToString method) path body decoder
 
@@ -212,7 +212,7 @@ stringBody =
 See the `AWS.KVEncode` for encoder functions to build the headers with.
 
 -}
-addHeaders : List ( String, String ) -> Request a -> Request a
+addHeaders : List ( String, String ) -> Request err a -> Request err a
 addHeaders headers req =
     { req | headers = List.append req.headers headers }
 
@@ -222,7 +222,7 @@ addHeaders headers req =
 See the `AWS.KVEncode` for encoder functions to build the query parameters with.
 
 -}
-addQuery : List ( String, String ) -> Request a -> Request a
+addQuery : List ( String, String ) -> Request err a -> Request err a
 addQuery query req =
     { req | query = List.append req.query query }
 
@@ -370,6 +370,32 @@ constantDecoder val =
 
             BadStatus_ ->
                 Http.BadStatus metadata.statusCode |> Err
+
+
+
+-- Error Reporting
+
+
+{-| The HTTP calls made to AWS can produce errors in two ways. The first is the
+normal `Http.Error` responses. The second is an error message at the application
+level from one of the AWS service endpoints.
+
+Only some endpoints can produce application level errors, in which case their error
+type can be given as `Never`.
+
+-}
+type Error err
+    = HttpError Http.Error
+    | AWSError err
+
+
+{-| AWS application level errors consist of a 'type' giving the name of an 'exception'
+and possibly a message string.
+-}
+type alias AWSAppError =
+    { type_ : String
+    , message : Maybe String
+    }
 
 
 methodToString : Method -> String
