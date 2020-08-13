@@ -31,7 +31,7 @@ sign :
     -> Credentials
     -> Posix
     -> Request err a
-    -> Task Http.Error a
+    -> Task (Error.Error err) a
 sign service creds date req =
     let
         responseDecoder response =
@@ -66,6 +66,7 @@ sign service creds date req =
         , resolver = resolver
         , timeout = Nothing
         }
+        |> Task.mapError Error.HttpError
 
 
 algorithm : String

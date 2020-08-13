@@ -80,16 +80,18 @@ send service credentials req =
                 _ ->
                     innerReq
 
-        signWithTimestamp : Request err a -> Posix -> Task (Error err) a
+        signWithTimestamp : Request err a -> Posix -> Task (Error.Error err) a
         signWithTimestamp innerReq posix =
             case service.signer of
                 SignV4 ->
                     V4.sign service credentials posix innerReq
 
                 SignS3 ->
-                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented." |> HttpError)
+                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented." |> Error.HttpError)
     in
-    Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
+    Time.now
+        |> Task.andThen (prepareRequest req |> signWithTimestamp)
+        |> Task.mapError internalErrToErr
 
 
 {-| Sends a `Request` to a `Service` without signing it.
@@ -111,11 +113,13 @@ sendUnsigned service req =
                 _ ->
                     innerReq
 
-        withTimestamp : Request err a -> Posix -> Task (Error err) a
+        withTimestamp : Request err a -> Posix -> Task (Error.Error err) a
         withTimestamp innerReq posix =
             Unsigned.prepare service posix innerReq
     in
-    Time.now |> Task.andThen (prepareRequest req |> withTimestamp)
+    Time.now
+        |> Task.andThen (prepareRequest req |> withTimestamp)
+        |> Task.mapError internalErrToErr
 
 
 

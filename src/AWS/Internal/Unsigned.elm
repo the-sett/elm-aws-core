@@ -23,7 +23,7 @@ prepare :
     Service
     -> Posix
     -> Request err a
-    -> Task Http.Error a
+    -> Task (Error.Error err) a
 prepare service date req =
     let
         responseDecoder response =
@@ -56,6 +56,7 @@ prepare service date req =
         , resolver = resolver
         , timeout = Nothing
         }
+        |> Task.mapError Error.HttpError
 
 
 headers : Service -> Posix -> Body -> List ( String, String ) -> List ( String, String )
