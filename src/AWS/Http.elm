@@ -44,6 +44,7 @@ module AWS.Http exposing
 import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
+import AWS.Internal.Error as Error
 import AWS.Internal.Request exposing (ErrorDecoder, Request, ResponseDecoder, ResponseStatus(..))
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
@@ -407,6 +408,16 @@ Use this, or define your own decoder to interpret these errors.
 awsAppErrDecoder : ErrorDecoder AWSAppError
 awsAppErrDecoder metadata body =
     Err body
+
+
+internalErrToErr : Error.Error a -> Error a
+internalErrToErr error =
+    case error of
+        Error.HttpError err ->
+            HttpError err
+
+        Error.AWSError err ->
+            AWSError err
 
 
 methodToString : Method -> String

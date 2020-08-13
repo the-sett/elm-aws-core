@@ -5,6 +5,7 @@ module AWS.Internal.Unsigned exposing (prepare)
 
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
+import AWS.Internal.Error as Error
 import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
