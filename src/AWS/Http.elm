@@ -44,7 +44,7 @@ module AWS.Http exposing
 import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
-import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
+import AWS.Internal.Request exposing (ErrorDecoder, Request, ResponseDecoder, ResponseStatus(..))
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
@@ -86,7 +86,7 @@ send service credentials req =
                     V4.sign service credentials posix innerReq
 
                 SignS3 ->
-                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented.")
+                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented." |> HttpError)
     in
     Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
 
@@ -152,9 +152,10 @@ request :
     -> Path
     -> Body
     -> ResponseDecoder a
+    -> ErrorDecoder err
     -> Request err a
-request name method path body decoder =
-    AWS.Internal.Request.unsigned name (methodToString method) path body decoder
+request name method path body decoder errorDecoder =
+    AWS.Internal.Request.unsigned name (methodToString method) path body decoder errorDecoder
 
 
 
@@ -396,6 +397,16 @@ type alias AWSAppError =
     { type_ : String
     , message : Maybe String
     }
+
+
+{-| The default decoder for the standard AWS application level errors.
+
+Use this, or define your own decoder to interpret these errors.
+
+-}
+awsAppErrDecoder : ErrorDecoder AWSAppError
+awsAppErrDecoder metadata body =
+    Err body
 
 
 methodToString : Method -> String
