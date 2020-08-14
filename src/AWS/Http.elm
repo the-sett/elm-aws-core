@@ -51,6 +51,7 @@ import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
 import Http exposing (Metadata)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as JDP
 import Json.Encode
 import Task exposing (Task)
 import Time exposing (Posix)
@@ -401,6 +402,7 @@ and possibly a message string.
 type alias AWSAppError =
     { type_ : String
     , message : Maybe String
+    , statusCode : Int
     }
 
 
@@ -411,7 +413,20 @@ Use this, or define your own decoder to interpret these errors.
 -}
 awsAppErrDecoder : ErrorDecoder AWSAppError
 awsAppErrDecoder metadata body =
-    Err body
+    let
+        bodyDecoder =
+            Decode.succeed
+                (\type_ message ->
+                    { type_ = type_
+                    , message = message
+                    , statusCode = metadata.statusCode
+                    }
+                )
+                |> JDP.required "__type" Decode.string
+                |> JDP.required "message" (Decode.maybe Decode.string)
+    in
+    Decode.decodeString bodyDecoder body
+        |> Result.mapError (\_ -> body)
 
 
 internalErrToErr : Error.Error a -> Error a
