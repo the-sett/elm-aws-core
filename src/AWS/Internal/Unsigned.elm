@@ -29,19 +29,40 @@ prepare service date req =
         responseDecoder response =
             case response of
                 Http.BadUrl_ url ->
-                    Http.BadUrl url |> Err
+                    Http.BadUrl url
+                        |> Error.HttpError
+                        |> Err
 
                 Http.Timeout_ ->
-                    Http.Timeout |> Err
+                    Http.Timeout
+                        |> Error.HttpError
+                        |> Err
 
                 Http.NetworkError_ ->
-                    Http.NetworkError |> Err
+                    Http.NetworkError
+                        |> Error.HttpError
+                        |> Err
 
                 Http.BadStatus_ metadata body ->
-                    req.decoder metadata body
+                    case req.errorDecoder metadata body of
+                        Ok appErr ->
+                            Error.AWSError appErr
+                                |> Err
+
+                        Err err ->
+                            Http.BadBody err
+                                |> Error.HttpError
+                                |> Err
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder metadata body
+                    case req.decoder metadata body of
+                        Ok resp ->
+                            Ok resp
+
+                        Err httpErr ->
+                            httpErr
+                                |> Error.HttpError
+                                |> Err
 
         resolver =
             Http.stringResolver responseDecoder
@@ -56,7 +77,6 @@ prepare service date req =
         , resolver = resolver
         , timeout = Nothing
         }
-        |> Task.mapError Error.HttpError
 
 
 headers : Service -> Posix -> Body -> List ( String, String ) -> List ( String, String )
