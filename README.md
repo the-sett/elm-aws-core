@@ -2,7 +2,15 @@
 - @rupertlssmith on https://elmlang.slack.com
 - @rupert on https://discourse.elm-lang.org
 
-**Status** - 11-May-2020 - Published as version 6.0.0
+**Status**
+
+- 17-Aug-2020 - Published as version 8.0.0
+
+Error handling has been implemented. A separate error decoder can be specified
+when building a request. There are ready implemented ones for the standard error
+format, and for the case where no application level error is expected.
+
+- 11-May-2020 - Published as version 6.0.0
 
 The API has been redesigned. The intermediate `.Core.` module name has been
 removed. The old `Encode` and `Decode` modules were dropped as not very useful
