@@ -7,6 +7,7 @@ module AWS.Http exposing
     , addHeaders, addQuery
     , ResponseDecoder
     , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
+    , Error(..), AWSAppError, awsAppErrDecoder, neverAppErrDecoder
     )
 
 {-| Handling of HTTP requests to AWS Services.
@@ -38,6 +39,11 @@ module AWS.Http exposing
 
 @docs ResponseDecoder
 @docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
+
+
+# HTTP and Application level errors
+
+@docs Error, AWSAppError, awsAppErrDecoder, neverAppErrDecoder
 
 -}
 
@@ -381,6 +387,18 @@ awsAppErrDecoder metadata body =
     in
     Decode.decodeString bodyDecoder body
         |> Result.mapError (\_ -> body)
+
+
+{-| The never error decoder for AWS endpoints that are not expected to produce
+any application level errors.
+
+If this decoder were to be called, it will simply return the body undecoded as
+an error and this should be mapped onto Http.BadBody.
+
+-}
+neverAppErrDecoder : ErrorDecoder Never
+neverAppErrDecoder _ body =
+    Err body
 
 
 internalErrToErr : Error.Error a -> Error a
