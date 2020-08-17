@@ -59,8 +59,8 @@ prepare service date req =
                         Ok resp ->
                             Ok resp
 
-                        Err httpErr ->
-                            httpErr
+                        Err err ->
+                            Http.BadBody err
                                 |> Error.HttpError
                                 |> Err
 

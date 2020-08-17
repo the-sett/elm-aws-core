@@ -254,12 +254,7 @@ this will be mapped onto `Http.BadBody` when present.
 fullDecoder : (Metadata -> String -> Result String a) -> ResponseDecoder a
 fullDecoder decodeFn =
     \metadata body ->
-        case decodeFn metadata body of
-            Ok val ->
-                Ok val
-
-            Err err ->
-                Http.BadBody err |> Err
+        decodeFn metadata body
 
 
 {-| A full JSON decoder for the response that can look at the status code, metadata
@@ -277,7 +272,7 @@ jsonFullDecoder decodeFn =
                 Ok val
 
             Err err ->
-                Http.BadBody (Decode.errorToString err) |> Err
+                Decode.errorToString err |> Err
 
 
 {-| A decoder for the response that uses only the body presented as a `String`
@@ -295,12 +290,7 @@ one of the 'full' decoders.
 stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
 stringBodyDecoder decodeFn =
     \metadata body ->
-        case decodeFn body of
-            Ok val ->
-                Ok val
-
-            Err err ->
-                Http.BadBody err |> Err
+        decodeFn body
 
 
 {-| A decoder for the response that uses only the body presented as a JSON `Value`
@@ -323,7 +313,7 @@ jsonBodyDecoder decodeFn =
                 Ok val
 
             Err err ->
-                Http.BadBody (Decode.errorToString err) |> Err
+                Decode.errorToString err |> Err
 
 
 {-| Not all AWS service produce a response that contains useful information.

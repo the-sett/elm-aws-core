@@ -40,7 +40,7 @@ import Json.Decode exposing (Decoder)
 
 
 type alias ResponseDecoder a =
-    Metadata -> String -> Result Http.Error a
+    Metadata -> String -> Result String a
 
 
 type alias ErrorDecoder err =
