@@ -5,7 +5,7 @@ module AWS.Http exposing
     , Body, MimeType
     , emptyBody, stringBody, jsonBody
     , addHeaders, addQuery
-    , ResponseDecoder, HttpStatus(..)
+    , ResponseDecoder
     , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
     )
 
@@ -36,7 +36,7 @@ module AWS.Http exposing
 
 # Build decoders to interpret the response.
 
-@docs ResponseDecoder, HttpStatus
+@docs ResponseDecoder
 @docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
 
 -}
@@ -45,7 +45,7 @@ import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
 import AWS.Internal.Error as Error
-import AWS.Internal.Request exposing (ErrorDecoder, Request, ResponseDecoder, ResponseStatus(..))
+import AWS.Internal.Request exposing (ErrorDecoder, Request, ResponseDecoder)
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
@@ -244,27 +244,6 @@ type alias ResponseDecoder a =
     AWS.Internal.Request.ResponseDecoder a
 
 
-{-| The HTTP response code type according to how `Elm.Http` classifies responses.
-
-A code from 200 to less than 300 is considered 'Good' and any other code is
-considered 'Bad'.
-
--}
-type HttpStatus
-    = GoodStatus
-    | BadStatus
-
-
-httpStatus : ResponseStatus -> HttpStatus
-httpStatus status =
-    case status of
-        GoodStatus_ ->
-            GoodStatus
-
-        BadStatus_ ->
-            BadStatus
-
-
 {-| A full decoder for the response that can look at the status code, metadata
 including headers and so on. The body is presented as a `String` for parsing.
 
@@ -272,10 +251,10 @@ It is possible to report an error as a String when interpreting the response, an
 this will be mapped onto `Http.BadBody` when present.
 
 -}
-fullDecoder : (HttpStatus -> Metadata -> String -> Result String a) -> ResponseDecoder a
+fullDecoder : (Metadata -> String -> Result String a) -> ResponseDecoder a
 fullDecoder decodeFn =
-    \status metadata body ->
-        case decodeFn (httpStatus status) metadata body of
+    \metadata body ->
+        case decodeFn metadata body of
             Ok val ->
                 Ok val
 
@@ -290,10 +269,10 @@ Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
 `Decode.errorToString`.
 
 -}
-jsonFullDecoder : (HttpStatus -> Metadata -> Decoder a) -> ResponseDecoder a
+jsonFullDecoder : (Metadata -> Decoder a) -> ResponseDecoder a
 jsonFullDecoder decodeFn =
-    \status metadata body ->
-        case Decode.decodeString (decodeFn (httpStatus status) metadata) body of
+    \metadata body ->
+        case Decode.decodeString (decodeFn metadata) body of
             Ok val ->
                 Ok val
 
@@ -315,18 +294,13 @@ one of the 'full' decoders.
 -}
 stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
 stringBodyDecoder decodeFn =
-    \status metadata body ->
-        case status of
-            GoodStatus_ ->
-                case decodeFn body of
-                    Ok val ->
-                        Ok val
+    \metadata body ->
+        case decodeFn body of
+            Ok val ->
+                Ok val
 
-                    Err err ->
-                        Http.BadBody err |> Err
-
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+            Err err ->
+                Http.BadBody err |> Err
 
 
 {-| A decoder for the response that uses only the body presented as a JSON `Value`
@@ -343,18 +317,13 @@ one of the 'full' decoders.
 -}
 jsonBodyDecoder : Decoder a -> ResponseDecoder a
 jsonBodyDecoder decodeFn =
-    \status metadata body ->
-        case status of
-            GoodStatus_ ->
-                case Decode.decodeString decodeFn body of
-                    Ok val ->
-                        Ok val
+    \metadata body ->
+        case Decode.decodeString decodeFn body of
+            Ok val ->
+                Ok val
 
-                    Err err ->
-                        Http.BadBody (Decode.errorToString err) |> Err
-
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+            Err err ->
+                Http.BadBody (Decode.errorToString err) |> Err
 
 
 {-| Not all AWS service produce a response that contains useful information.
@@ -370,13 +339,8 @@ one of the 'full' decoders.
 -}
 constantDecoder : a -> ResponseDecoder a
 constantDecoder val =
-    \status metadata _ ->
-        case status of
-            GoodStatus_ ->
-                Ok val
-
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+    \metadata _ ->
+        Ok val
 
 
 

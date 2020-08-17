@@ -2,7 +2,6 @@ module AWS.Internal.Request exposing
     ( ErrorDecoder
     , Request
     , ResponseDecoder
-    , ResponseStatus(..)
     , unsigned
     )
 
@@ -41,16 +40,11 @@ import Json.Decode exposing (Decoder)
 
 
 type alias ResponseDecoder a =
-    ResponseStatus -> Metadata -> String -> Result Http.Error a
+    Metadata -> String -> Result Http.Error a
 
 
 type alias ErrorDecoder err =
     Metadata -> String -> Result String err
-
-
-type ResponseStatus
-    = GoodStatus_
-    | BadStatus_
 
 
 type alias Request err a =
