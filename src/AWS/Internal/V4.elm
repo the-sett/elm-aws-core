@@ -9,7 +9,8 @@ module AWS.Internal.V4 exposing (sign)
 import AWS.Credentials as Credentials exposing (Credentials)
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
+import AWS.Internal.Error as Error
+import AWS.Internal.Request exposing (Request, ResponseDecoder)
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
 import Crypto.HMAC exposing (sha256)
@@ -29,26 +30,47 @@ sign :
     Service
     -> Credentials
     -> Posix
-    -> Request a
-    -> Task Http.Error a
+    -> Request err a
+    -> Task (Error.Error err) a
 sign service creds date req =
     let
         responseDecoder response =
             case response of
                 Http.BadUrl_ url ->
-                    Http.BadUrl url |> Err
+                    Http.BadUrl url
+                        |> Error.HttpError
+                        |> Err
 
                 Http.Timeout_ ->
-                    Http.Timeout |> Err
+                    Http.Timeout
+                        |> Error.HttpError
+                        |> Err
 
                 Http.NetworkError_ ->
-                    Http.NetworkError |> Err
+                    Http.NetworkError
+                        |> Error.HttpError
+                        |> Err
 
                 Http.BadStatus_ metadata body ->
-                    req.decoder BadStatus_ metadata body
+                    case req.errorDecoder metadata body of
+                        Ok appErr ->
+                            Error.AWSError appErr
+                                |> Err
+
+                        Err err ->
+                            Http.BadBody err
+                                |> Error.HttpError
+                                |> Err
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder GoodStatus_ metadata body
+                    case req.decoder metadata body of
+                        Ok resp ->
+                            Ok resp
+
+                        Err err ->
+                            Http.BadBody err
+                                |> Error.HttpError
+                                |> Err
 
         resolver =
             Http.stringResolver responseDecoder
@@ -123,7 +145,7 @@ addAuthorization :
     Service
     -> Credentials
     -> Posix
-    -> Request a
+    -> Request err a
     -> List ( String, String )
     -> List ( String, String )
 addAuthorization service creds date req headersList =
@@ -156,7 +178,7 @@ authorization :
     Credentials
     -> Posix
     -> Service
-    -> Request a
+    -> Request err a
     -> List ( String, String )
     -> String
 authorization creds date service req rawHeaders =

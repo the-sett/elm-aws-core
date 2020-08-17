@@ -5,7 +5,8 @@ module AWS.Internal.Unsigned exposing (prepare)
 
 import AWS.Internal.Body exposing (Body, explicitMimetype)
 import AWS.Internal.Canonical exposing (canonical, canonicalPayload, signedHeaders)
-import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
+import AWS.Internal.Error as Error
+import AWS.Internal.Request exposing (Request, ResponseDecoder)
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.UrlBuilder
 import Http
@@ -21,26 +22,47 @@ import Time exposing (Posix)
 prepare :
     Service
     -> Posix
-    -> Request a
-    -> Task Http.Error a
+    -> Request err a
+    -> Task (Error.Error err) a
 prepare service date req =
     let
         responseDecoder response =
             case response of
                 Http.BadUrl_ url ->
-                    Http.BadUrl url |> Err
+                    Http.BadUrl url
+                        |> Error.HttpError
+                        |> Err
 
                 Http.Timeout_ ->
-                    Http.Timeout |> Err
+                    Http.Timeout
+                        |> Error.HttpError
+                        |> Err
 
                 Http.NetworkError_ ->
-                    Http.NetworkError |> Err
+                    Http.NetworkError
+                        |> Error.HttpError
+                        |> Err
 
                 Http.BadStatus_ metadata body ->
-                    req.decoder BadStatus_ metadata body
+                    case req.errorDecoder metadata body of
+                        Ok appErr ->
+                            Error.AWSError appErr
+                                |> Err
+
+                        Err err ->
+                            Http.BadBody err
+                                |> Error.HttpError
+                                |> Err
 
                 Http.GoodStatus_ metadata body ->
-                    req.decoder GoodStatus_ metadata body
+                    case req.decoder metadata body of
+                        Ok resp ->
+                            Ok resp
+
+                        Err err ->
+                            Http.BadBody err
+                                |> Error.HttpError
+                                |> Err
 
         resolver =
             Http.stringResolver responseDecoder

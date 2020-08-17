@@ -5,7 +5,7 @@ module AWS.Http exposing
     , Body, MimeType
     , emptyBody, stringBody, jsonBody
     , addHeaders, addQuery
-    , ResponseDecoder, HttpStatus(..)
+    , ResponseDecoder
     , fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
     )
 
@@ -36,7 +36,7 @@ module AWS.Http exposing
 
 # Build decoders to interpret the response.
 
-@docs ResponseDecoder, HttpStatus
+@docs ResponseDecoder
 @docs fullDecoder, jsonFullDecoder, stringBodyDecoder, jsonBodyDecoder, constantDecoder
 
 -}
@@ -44,12 +44,14 @@ module AWS.Http exposing
 import AWS.Config exposing (Protocol(..), Signer(..))
 import AWS.Credentials exposing (Credentials)
 import AWS.Internal.Body
-import AWS.Internal.Request exposing (Request, ResponseDecoder, ResponseStatus(..))
+import AWS.Internal.Error as Error
+import AWS.Internal.Request exposing (ErrorDecoder, Request, ResponseDecoder)
 import AWS.Internal.Service as Service exposing (Service)
 import AWS.Internal.Unsigned as Unsigned
 import AWS.Internal.V4 as V4
 import Http exposing (Metadata)
 import Json.Decode as Decode exposing (Decoder)
+import Json.Decode.Pipeline as JDP
 import Json.Encode
 import Task exposing (Task)
 import Time exposing (Posix)
@@ -64,11 +66,11 @@ import Time exposing (Posix)
 send :
     Service
     -> Credentials
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task (Error err) a
 send service credentials req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -79,27 +81,29 @@ send service credentials req =
                 _ ->
                     innerReq
 
-        signWithTimestamp : Request a -> Posix -> Task Http.Error a
+        signWithTimestamp : Request err a -> Posix -> Task (Error.Error err) a
         signWithTimestamp innerReq posix =
             case service.signer of
                 SignV4 ->
                     V4.sign service credentials posix innerReq
 
                 SignS3 ->
-                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented.")
+                    Task.fail (Http.BadBody "TODO: S3 Signing Scheme not implemented." |> Error.HttpError)
     in
-    Time.now |> Task.andThen (prepareRequest req |> signWithTimestamp)
+    Time.now
+        |> Task.andThen (prepareRequest req |> signWithTimestamp)
+        |> Task.mapError internalErrToErr
 
 
 {-| Sends a `Request` to a `Service` without signing it.
 -}
 sendUnsigned :
     Service
-    -> Request a
-    -> Task.Task Http.Error a
+    -> Request err a
+    -> Task.Task (Error err) a
 sendUnsigned service req =
     let
-        prepareRequest : Request a -> Request a
+        prepareRequest : Request err a -> Request err a
         prepareRequest innerReq =
             case service.protocol of
                 JSON ->
@@ -110,11 +114,13 @@ sendUnsigned service req =
                 _ ->
                     innerReq
 
-        withTimestamp : Request a -> Posix -> Task Http.Error a
+        withTimestamp : Request err a -> Posix -> Task (Error.Error err) a
         withTimestamp innerReq posix =
             Unsigned.prepare service posix innerReq
     in
-    Time.now |> Task.andThen (prepareRequest req |> withTimestamp)
+    Time.now
+        |> Task.andThen (prepareRequest req |> withTimestamp)
+        |> Task.mapError internalErrToErr
 
 
 
@@ -123,8 +129,8 @@ sendUnsigned service req =
 
 {-| Holds an unsigned AWS HTTP request.
 -}
-type alias Request a =
-    AWS.Internal.Request.Request a
+type alias Request err a =
+    AWS.Internal.Request.Request err a
 
 
 {-| HTTP request methods.
@@ -152,9 +158,10 @@ request :
     -> Path
     -> Body
     -> ResponseDecoder a
-    -> Request a
-request name method path body decoder =
-    AWS.Internal.Request.unsigned name (methodToString method) path body decoder
+    -> ErrorDecoder err
+    -> Request err a
+request name method path body decoder errorDecoder =
+    AWS.Internal.Request.unsigned name (methodToString method) path body decoder errorDecoder
 
 
 
@@ -212,7 +219,7 @@ stringBody =
 See the `AWS.KVEncode` for encoder functions to build the headers with.
 
 -}
-addHeaders : List ( String, String ) -> Request a -> Request a
+addHeaders : List ( String, String ) -> Request err a -> Request err a
 addHeaders headers req =
     { req | headers = List.append req.headers headers }
 
@@ -222,7 +229,7 @@ addHeaders headers req =
 See the `AWS.KVEncode` for encoder functions to build the query parameters with.
 
 -}
-addQuery : List ( String, String ) -> Request a -> Request a
+addQuery : List ( String, String ) -> Request err a -> Request err a
 addQuery query req =
     { req | query = List.append req.query query }
 
@@ -237,27 +244,6 @@ type alias ResponseDecoder a =
     AWS.Internal.Request.ResponseDecoder a
 
 
-{-| The HTTP response code type according to how `Elm.Http` classifies responses.
-
-A code from 200 to less than 300 is considered 'Good' and any other code is
-considered 'Bad'.
-
--}
-type HttpStatus
-    = GoodStatus
-    | BadStatus
-
-
-httpStatus : ResponseStatus -> HttpStatus
-httpStatus status =
-    case status of
-        GoodStatus_ ->
-            GoodStatus
-
-        BadStatus_ ->
-            BadStatus
-
-
 {-| A full decoder for the response that can look at the status code, metadata
 including headers and so on. The body is presented as a `String` for parsing.
 
@@ -265,15 +251,10 @@ It is possible to report an error as a String when interpreting the response, an
 this will be mapped onto `Http.BadBody` when present.
 
 -}
-fullDecoder : (HttpStatus -> Metadata -> String -> Result String a) -> ResponseDecoder a
+fullDecoder : (Metadata -> String -> Result String a) -> ResponseDecoder a
 fullDecoder decodeFn =
-    \status metadata body ->
-        case decodeFn (httpStatus status) metadata body of
-            Ok val ->
-                Ok val
-
-            Err err ->
-                Http.BadBody err |> Err
+    \metadata body ->
+        decodeFn metadata body
 
 
 {-| A full JSON decoder for the response that can look at the status code, metadata
@@ -283,15 +264,15 @@ Any decoder error is mapped onto `Http.BadBody` as a `String` when present using
 `Decode.errorToString`.
 
 -}
-jsonFullDecoder : (HttpStatus -> Metadata -> Decoder a) -> ResponseDecoder a
+jsonFullDecoder : (Metadata -> Decoder a) -> ResponseDecoder a
 jsonFullDecoder decodeFn =
-    \status metadata body ->
-        case Decode.decodeString (decodeFn (httpStatus status) metadata) body of
+    \metadata body ->
+        case Decode.decodeString (decodeFn metadata) body of
             Ok val ->
                 Ok val
 
             Err err ->
-                Http.BadBody (Decode.errorToString err) |> Err
+                Decode.errorToString err |> Err
 
 
 {-| A decoder for the response that uses only the body presented as a `String`
@@ -308,18 +289,8 @@ one of the 'full' decoders.
 -}
 stringBodyDecoder : (String -> Result String a) -> ResponseDecoder a
 stringBodyDecoder decodeFn =
-    \status metadata body ->
-        case status of
-            GoodStatus_ ->
-                case decodeFn body of
-                    Ok val ->
-                        Ok val
-
-                    Err err ->
-                        Http.BadBody err |> Err
-
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+    \metadata body ->
+        decodeFn body
 
 
 {-| A decoder for the response that uses only the body presented as a JSON `Value`
@@ -336,18 +307,13 @@ one of the 'full' decoders.
 -}
 jsonBodyDecoder : Decoder a -> ResponseDecoder a
 jsonBodyDecoder decodeFn =
-    \status metadata body ->
-        case status of
-            GoodStatus_ ->
-                case Decode.decodeString decodeFn body of
-                    Ok val ->
-                        Ok val
+    \metadata body ->
+        case Decode.decodeString decodeFn body of
+            Ok val ->
+                Ok val
 
-                    Err err ->
-                        Http.BadBody (Decode.errorToString err) |> Err
-
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+            Err err ->
+                Decode.errorToString err |> Err
 
 
 {-| Not all AWS service produce a response that contains useful information.
@@ -363,13 +329,68 @@ one of the 'full' decoders.
 -}
 constantDecoder : a -> ResponseDecoder a
 constantDecoder val =
-    \status metadata _ ->
-        case status of
-            GoodStatus_ ->
-                Ok val
+    \metadata _ ->
+        Ok val
 
-            BadStatus_ ->
-                Http.BadStatus metadata.statusCode |> Err
+
+
+-- Error Reporting
+
+
+{-| The HTTP calls made to AWS can produce errors in two ways. The first is the
+normal `Http.Error` responses. The second is an error message at the application
+level from one of the AWS service endpoints.
+
+Only some endpoints can produce application level errors, in which case their error
+type can be given as `Never`.
+
+-}
+type Error err
+    = HttpError Http.Error
+    | AWSError err
+
+
+{-| AWS application level errors consist of a 'type' giving the name of an 'exception'
+and possibly a message string.
+-}
+type alias AWSAppError =
+    { type_ : String
+    , message : Maybe String
+    , statusCode : Int
+    }
+
+
+{-| The default decoder for the standard AWS application level errors.
+
+Use this, or define your own decoder to interpret these errors.
+
+-}
+awsAppErrDecoder : ErrorDecoder AWSAppError
+awsAppErrDecoder metadata body =
+    let
+        bodyDecoder =
+            Decode.succeed
+                (\type_ message ->
+                    { type_ = type_
+                    , message = message
+                    , statusCode = metadata.statusCode
+                    }
+                )
+                |> JDP.required "__type" Decode.string
+                |> JDP.required "message" (Decode.maybe Decode.string)
+    in
+    Decode.decodeString bodyDecoder body
+        |> Result.mapError (\_ -> body)
+
+
+internalErrToErr : Error.Error a -> Error a
+internalErrToErr error =
+    case error of
+        Error.HttpError err ->
+            HttpError err
+
+        Error.AWSError err ->
+            AWSError err
 
 
 methodToString : Method -> String

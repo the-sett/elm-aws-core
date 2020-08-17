@@ -1,7 +1,7 @@
 module AWS.Internal.Request exposing
-    ( Request
+    ( ErrorDecoder
+    , Request
     , ResponseDecoder
-    , ResponseStatus(..)
     , unsigned
     )
 
@@ -40,15 +40,14 @@ import Json.Decode exposing (Decoder)
 
 
 type alias ResponseDecoder a =
-    ResponseStatus -> Metadata -> String -> Result Http.Error a
+    Metadata -> String -> Result String a
 
 
-type ResponseStatus
-    = GoodStatus_
-    | BadStatus_
+type alias ErrorDecoder err =
+    Metadata -> String -> Result String err
 
 
-type alias Request a =
+type alias Request err a =
     { name : String
     , method : String
     , path : String
@@ -56,6 +55,7 @@ type alias Request a =
     , headers : List ( String, String )
     , query : List ( String, String )
     , decoder : ResponseDecoder a
+    , errorDecoder : ErrorDecoder err
     }
 
 
@@ -65,8 +65,9 @@ unsigned :
     -> String
     -> Body
     -> ResponseDecoder a
-    -> Request a
-unsigned name method uri body decoder =
+    -> ErrorDecoder err
+    -> Request err a
+unsigned name method uri body decoder errorDecoder =
     { name = name
     , method = method
     , path = uri
@@ -74,4 +75,5 @@ unsigned name method uri body decoder =
     , headers = []
     , query = []
     , decoder = decoder
+    , errorDecoder = errorDecoder
     }
