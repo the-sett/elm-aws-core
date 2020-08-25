@@ -1,18 +1,38 @@
 module AWS.ServiceSpec exposing
-    ( AWSType(..)
-    , AuthorizationStrategy
-    , Authorizers
-    , HttpMethod(..)
-    , Location(..)
-    , MetaData
-    , Operation
+    ( awsServiceDecoder, awsServiceEncoder
     , ServiceSpec
-    , Shape
-    , ShapeRef
-    , awsServiceCodec
+    , AWSType(..), AuthorizationStrategy, Authorizers, HttpMethod(..)
+    , Location(..), MetaData, Operation, Shape, ShapeRef
     )
 
-{-| AWS Service Descriptor. This module provides the data model and decoders.
+{-| Provides the data model for an AWS Service Descriptor, and a codec for that
+model to encode/decode it from JSON.
+
+All AWS services also have a specification, that describes the data model that
+the service accepts or produces, and the endpoint that the service provides. It
+is a similar concept to a Swagger or OpenAPI specification; the format is not the
+same but the function is. The format is specific to AWS, and is encoded as JSON.
+The most relevant place to find these service descriptors is here:
+
+<https://github.com/aws/aws-sdk-js/tree/master/apis>
+
+These service specifications are not needed to call the services. They are meta
+data describing the services, and can be useful for things such code generation.
+They are not an essential part of the `elm-aws-core` package, but the data model
+is included here for convenience.
+
+
+# The JSON encoders and decoders for the service specification.
+
+@docs awsServiceDecoder, awsServiceEncoder
+
+
+# The service spec data model.
+
+@docs ServiceSpec
+@docs AWSType, AuthorizationStrategy, Authorizers, HttpMethod
+@docs Location, MetaData, Operation, Shape, ShapeRef
+
 -}
 
 import AWS.Config exposing (Protocol(..), Signer(..), TimestampFormat(..))
@@ -23,16 +43,21 @@ import Json.Decode as Decode
 import Json.Encode as Encode
 
 
-type alias ServiceSpec =
-    { metaData : MetaData
-    , operations : Dict String Operation
-    , shapes : Dict String Shape
-    , authorizers : Maybe Authorizers
-    , documentation : Maybe String
-    , version : Maybe String
-    }
+{-| A JSON decoder for the service specification.
+-}
+awsServiceDecoder : Decode.Decoder ServiceSpec
+awsServiceDecoder =
+    Codec.decoder awsServiceCodec
 
 
+{-| A JSON encoder for the service specification.
+-}
+awsServiceEncoder : ServiceSpec -> Encode.Value
+awsServiceEncoder =
+    Codec.encoder awsServiceCodec
+
+
+awsServiceCodec : Codec ServiceSpec
 awsServiceCodec =
     Codec.object ServiceSpec
         |> Codec.field "metadata" .metaData metaDataCodec
@@ -44,6 +69,20 @@ awsServiceCodec =
         |> Codec.buildObject
 
 
+{-| The AWS service specification data model.
+-}
+type alias ServiceSpec =
+    { metaData : MetaData
+    , operations : Dict String Operation
+    , shapes : Dict String Shape
+    , authorizers : Maybe Authorizers
+    , documentation : Maybe String
+    , version : Maybe String
+    }
+
+
+{-| The service meta data.
+-}
 type alias MetaData =
     { apiVersion : String
     , endpointPrefix : String
@@ -93,6 +132,8 @@ metaDataCodec =
         |> Codec.buildObject
 
 
+{-| The service authorizers.
+-}
 type alias Authorizers =
     { authorization_strategy : AuthorizationStrategy
     }
@@ -104,6 +145,8 @@ authorizersCodec =
         |> Codec.buildObject
 
 
+{-| An authorization strategy.
+-}
 type alias AuthorizationStrategy =
     { name : String
     , placement : Placement
@@ -132,6 +175,8 @@ placementCodec =
         |> Codec.buildObject
 
 
+{-| A descriptor for a service endpoint.
+-}
 type alias Operation =
     { http : Http
     , name : String
@@ -210,6 +255,8 @@ errorCodec =
         |> Codec.buildObject
 
 
+{-| A reference to a data model.
+-}
 type alias ShapeRef =
     { shape : String
     , box : Maybe Bool
@@ -279,6 +326,8 @@ shapeRefCodec =
         |> Codec.buildObject
 
 
+{-| A data model descriptor
+-}
 type alias Shape =
     { type_ : AWSType
     , box : Maybe Bool
@@ -344,6 +393,10 @@ shapeCodec =
         |> Codec.buildObject
 
 
+{-| Describes the possible locations that a parameter being passed to or
+received from a service can occupy; is it in the HTTP header, body, query and
+so on.
+-}
 type Location
     = Header
     | QueryString
@@ -403,6 +456,8 @@ locationCodec =
 -- "headers"
 
 
+{-| The basic data types that AWS uses to define its service data model.
+-}
 type AWSType
     = AString
     | ABoolean
@@ -543,6 +598,8 @@ signerEnum =
         )
 
 
+{-| The HTTP method used to invoke a service.
+-}
 type HttpMethod
     = DELETE
     | GET
