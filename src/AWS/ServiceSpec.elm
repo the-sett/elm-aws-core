@@ -607,6 +607,7 @@ type HttpMethod
     | OPTIONS
     | POST
     | PUT
+    | PATCH
 
 
 httpMethodEnum : Enum HttpMethod
@@ -618,6 +619,7 @@ httpMethodEnum =
         , OPTIONS
         , POST
         , PUT
+        , PATCH
         ]
         (\val ->
             case val of
@@ -638,6 +640,9 @@ httpMethodEnum =
 
                 PUT ->
                     "PUT"
+
+                PATCH ->
+                    "PATCH"
         )
 
 
