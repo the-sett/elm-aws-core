@@ -209,7 +209,7 @@ credentialScope : Posix -> Credentials -> Service -> String
 credentialScope date creds service =
     [ date |> formatPosix |> String.slice 0 8
     , Service.region service
-    , service.endpointPrefix
+    , Maybe.withDefault service.endpointPrefix service.signingName
     , "aws4_request"
     ]
         |> String.join "/"
@@ -229,7 +229,7 @@ signature creds service date toSign =
         |> Bytes.fromUTF8
         |> digest (formatPosix date |> String.slice 0 8)
         |> digest (Service.region service)
-        |> digest service.endpointPrefix
+        |> digest (Maybe.withDefault service.endpointPrefix service.signingName)
         |> digest "aws4_request"
         |> digest toSign
         |> Hex.fromByteList
