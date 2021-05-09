@@ -4,6 +4,14 @@
 
 **Status**
 
+- 09-May-2021 - Published as version 9.0.0
+
+The PATCH HttpMethod was added.
+
+- 25-Aug-2020 - Published as version 8.1.0
+
+The model for AWS service specs and JSON codecs for it were added.
+
 - 17-Aug-2020 - Published as version 8.0.0
 
 Error handling has been implemented. A separate error decoder can be specified
