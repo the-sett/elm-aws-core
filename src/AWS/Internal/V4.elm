@@ -79,8 +79,8 @@ sign service creds date req =
         { method = req.method
         , headers =
             headers service date req.body req.headers
-                |> addAuthorization service creds date req
                 |> addSessionToken creds
+                |> addAuthorization service creds date req
                 |> List.map (\( key, val ) -> Http.header key val)
         , url = AWS.Internal.UrlBuilder.url service req
         , body = AWS.Internal.Body.toHttp req.body
